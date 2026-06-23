@@ -12,7 +12,8 @@
 
 - [About](#about)
 - [Features](#features)
-- [Prerequisites](#prerequisites)
+- [Requirements](#requirements)
+- [Build Requirements](#build-requirements)
 - [Quick Start](#quick-start)
 - [Usage](#usage)
 - [Functionality](#functionality)
@@ -58,14 +59,24 @@ This app supports automatic scanning of CS2 installation directories and match h
 
 ---
 
-## Prerequisites
+## Requirements
 
-Before using this application, make sure you have:
+To use the compiled application, the following requirements must be met:
 
 1. **Counter-Strike 2** game installed
 2. **CS2MatchStats** plugin installed and running (for generating match records)
 3. **Windows 10/11** operating system
-4. **Node.js 16+** (only needed for development)
+
+---
+
+## Build Requirements
+
+If you need to build this project from source, the following additional requirements must be met:
+
+1. **Node.js 16+** - JavaScript runtime environment
+2. **npm** - Node.js package manager (usually installed with Node.js)
+3. Stable internet connection (required for downloading Electron binaries on first install)
+4. Approximately 1GB of available disk space (dependencies and build artifacts)
 
 ---
 
