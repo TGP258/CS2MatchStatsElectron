@@ -1621,6 +1621,18 @@ function showRoundDetail(idx) {
   const rNum = round.RoundNumber || (idx + 1);
   const winner = round.Winner === 'CT' ? _('teamA') : round.Winner === 'T' ? _('teamB') : '???';
   const events = round.Events || [];
+  const matchStartTime = state.currentMatch?.StartTime || '';
+
+  function getEventAbsTime(eventSeconds) {
+    if (!matchStartTime) return formatSecondsToMinSec(eventSeconds || 0);
+    const start = new Date(matchStartTime);
+    if (isNaN(start.getTime())) return formatSecondsToMinSec(eventSeconds || 0);
+    const abs = new Date(start.getTime() + (Number(eventSeconds) || 0) * 1000);
+    const h = String(abs.getHours()).padStart(2, '0');
+    const m = String(abs.getMinutes()).padStart(2, '0');
+    const s = String(abs.getSeconds()).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  }
 
   document.getElementById('modal-round-title').textContent = `R${rNum} - ${winner} 胜`;
 
@@ -1638,7 +1650,7 @@ function showRoundDetail(idx) {
       const victimColor = victimTeam === 'CT' ? 'var(--ct-color)' : (victimTeam === 'T' ? 'var(--t-color)' : 'var(--text-secondary)');
       html += `
         <div class="detail-event">
-          <span class="detail-time">${formatSecondsToMinSec(e.Time || 0)}</span>
+          <span class="detail-time">${getEventAbsTime(e.Time)}</span>
           <span style="color:${attackerColor};font-weight:600;">${escapeHtml(e.Attacker || 'Unknown')}</span>
           <span class="detail-weapon">${escapeHtml(weaponName)}${e.Headshot ? ' (爆头)' : ''}</span>
           <span style="color:${victimColor};">${escapeHtml(e.Victim || 'Unknown')}</span>
@@ -1654,7 +1666,7 @@ function showRoundDetail(idx) {
       const playerColor = playerTeam === 'CT' ? 'var(--ct-color)' : (playerTeam === 'T' ? 'var(--t-color)' : 'var(--text-secondary)');
       html += `
         <div class="detail-bomb">
-          <span class="detail-time">${formatSecondsToMinSec(e.Time || 0)}</span>
+          <span class="detail-time">${getEventAbsTime(e.Time)}</span>
           <span>${isPlant ? '放置C4炸弹' : '拆除C4炸弹'}</span>
           <span style="color:${playerColor};font-weight:600;">${escapeHtml(e.Player || 'Unknown')}</span>
         </div>
