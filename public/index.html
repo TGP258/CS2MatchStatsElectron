@@ -1,0 +1,1842 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CS2 Match Stats</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: #0b0e14;
+      --bg-surface: #141824;
+      --bg-surface-2: #1b2030;
+      --bg-row-ct: linear-gradient(90deg, rgba(59,130,246,0.10) 0%, rgba(59,130,246,0.04) 100%);
+      --bg-row-t: linear-gradient(90deg, rgba(239,68,68,0.10) 0%, rgba(239,68,68,0.04) 100%);
+      --bg-row-hover: rgba(124, 58, 237, 0.10);
+      --bg-timeline: linear-gradient(180deg, #121826 0%, #0d121c 100%);
+      --border: rgba(255, 255, 255, 0.07);
+      --border-strong: rgba(124, 58, 237, 0.35);
+      --accent: #7c3aed;
+      --accent-light: #a78bfa;
+      --accent-soft: rgba(124, 58, 237, 0.18);
+      --ct-color: #3b82f6;
+      --t-color: #ef4444;
+      --text-primary: #f0f3f8;
+      --text-secondary: #a7b0c2;
+      --text-muted: #6b7280;
+      --win-green: #22c55e;
+      --lose-red: #ef4444;
+      --stat-blue: #60a5fa;
+      --stat-yellow: #fbbf24;
+      --stat-purple: #a78bfa;
+      --stat-orange: #f97316;
+      --stat-teal: #14b8a6;
+      --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0,0,0,0.2);
+      --shadow-inner: inset 0 1px 0 rgba(255,255,255,0.03);
+      --titlebar-height: 40px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      background: var(--bg-main);
+      color: var(--text-primary);
+      font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    ::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: transparent;
+    }
+
+    body {
+      background:
+        radial-gradient(ellipse at top, rgba(124, 58, 237, 0.10) 0%, transparent 50%),
+        radial-gradient(ellipse at bottom, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+        var(--bg-main);
+      user-select: none;
+    }
+
+    a { color: var(--accent-light); text-decoration: none; }
+    a:hover { color: var(--accent); }
+
+    /* Custom Title Bar */
+    .titlebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--titlebar-height);
+      background: linear-gradient(180deg, rgba(20,24,36,0.98) 0%, rgba(20,24,36,0.92) 100%);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      z-index: 9999;
+      -webkit-app-region: drag;
+      backdrop-filter: blur(20px);
+    }
+
+    .titlebar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .titlebar-icon {
+      width: 20px;
+      height: 20px;
+      background: linear-gradient(135deg, var(--accent-light), var(--accent));
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .titlebar-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: 0.2px;
+    }
+
+    .titlebar-center {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .titlebar-right {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      -webkit-app-region: no-drag;
+    }
+
+    .titlebar-btn {
+      width: 46px;
+      height: var(--titlebar-height);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s;
+      color: var(--text-secondary);
+    }
+
+    .titlebar-btn:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-primary);
+    }
+
+    .titlebar-btn.close:hover {
+      background: var(--lose-red);
+      color: white;
+    }
+
+    .titlebar-btn svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .app {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: calc(var(--titlebar-height) + 24px) 24px 24px;
+    }
+
+    /* Header */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .page-title .accent {
+      background: linear-gradient(90deg, var(--accent-light), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .back-btn, .refresh-btn, .settings-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+      -webkit-app-region: no-drag;
+    }
+
+    .back-btn:hover, .refresh-btn:hover, .settings-btn:hover {
+      background: var(--bg-surface-2);
+      color: var(--accent-light);
+      border-color: var(--border-strong);
+    }
+
+    /* User Stats Card - Redesigned */
+    .user-stats-section {
+      margin-bottom: 24px;
+    }
+
+    .stats-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow-card), var(--shadow-inner);
+    }
+
+    .stats-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .stats-card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .player-selector {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .player-selector select {
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      min-width: 150px;
+    }
+
+    .player-selector select:focus {
+      outline: none;
+      border-color: var(--border-strong);
+    }
+
+    /* New stats layout: ring chart + stat grid */
+    .stats-main {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .stats-ring-section {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 24px;
+      border-right: 1px solid var(--border);
+    }
+
+    .ring-chart-container {
+      position: relative;
+      width: 140px;
+      height: 140px;
+    }
+
+    .ring-chart-container svg {
+      transform: rotate(-90deg);
+    }
+
+    .ring-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .ring-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .ring-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    .ring-value.good { color: var(--win-green); }
+    .ring-value.neutral { color: var(--text-primary); }
+    .ring-value.bad { color: var(--lose-red); }
+
+    .stats-grid-section {
+      flex: 1;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .stat-item {
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      text-align: center;
+      justify-content: center;
+    }
+
+    .stat-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .stat-value.good { color: var(--win-green); }
+    .stat-value.neutral { color: var(--text-primary); }
+    .stat-value.bad { color: var(--lose-red); }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .stat-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .stat-icon.blue { background: rgba(59,130,246,0.15); color: var(--stat-blue); }
+    .stat-icon.green { background: rgba(34,197,94,0.15); color: var(--win-green); }
+    .stat-icon.yellow { background: rgba(251,191,36,0.15); color: var(--stat-yellow); }
+    .stat-icon.purple { background: rgba(167,139,250,0.15); color: var(--stat-purple); }
+    .stat-icon.red { background: rgba(239,68,68,0.15); color: var(--lose-red); }
+    .stat-icon.orange { background: rgba(249,115,22,0.15); color: var(--stat-orange); }
+    .stat-icon.teal { background: rgba(20,184,166,0.15); color: var(--stat-teal); }
+
+    /* Rating Trend Chart */
+    .rating-trend-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .rating-trend-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .rating-chart-container {
+      width: 100%;
+      height: 160px;
+    }
+
+    /* Path Status */
+    .path-status {
+      margin-bottom: 20px;
+    }
+
+    .path-status-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--bg-surface-2);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    .path-status-item.success { border-left: 3px solid var(--win-green); }
+    .path-status-item.error { border-left: 3px solid var(--lose-red); }
+    .path-status-item.warning { border-left: 3px solid var(--stat-yellow); }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .status-dot.success { background: var(--win-green); }
+    .status-dot.error { background: var(--lose-red); }
+    .status-dot.warning { background: var(--stat-yellow); }
+
+    /* Match Card */
+    .match-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-card), var(--shadow-inner);
+    }
+
+    .match-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-strong);
+      box-shadow: 0 8px 32px rgba(124, 58, 237, 0.25), var(--shadow-inner);
+    }
+
+    .match-info { display: flex; flex-direction: column; gap: 4px; }
+    .match-map { font-size: 16px; font-weight: 600; }
+    .match-meta { font-size: 12px; color: var(--text-muted); display: flex; gap: 12px; }
+
+    .match-score {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .score-ct { color: var(--ct-color); }
+    .score-t { color: var(--t-color); }
+    .score-sep { color: var(--text-muted); font-size: 18px; }
+
+    /* Score Panel (Match Detail) */
+    .score-panel {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-radius: 12px 12px 0 0;
+      padding: 18px 28px;
+    }
+    .team-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .team-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+    }
+    .team-dot.ct { background: var(--ct-color); }
+    .team-dot.t  { background: var(--t-color); }
+    .big-score {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 42px;
+      font-weight: 700;
+      letter-spacing: 4px;
+    }
+    .big-score .ct { color: var(--ct-color); }
+    .big-score .t  { color: var(--t-color); }
+    .big-score .sep { color: var(--text-muted); margin: 0 10px; font-size: 28px; }
+    .match-subtitle {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Stats Table */
+    .stats-table-wrap {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      box-shadow: var(--shadow-card), var(--shadow-inner);
+    }
+    .stats-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    .stats-table th, .stats-table td {
+      padding: 10px 12px;
+      text-align: center;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .stats-table th {
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: var(--bg-surface-2);
+      border-bottom: 1px solid var(--border);
+      border-top: 1px solid var(--border);
+    }
+    .stats-table th.player-col,
+    .stats-table td.player-col {
+      text-align: left;
+    }
+    .stats-table td.player-col {
+      font-weight: 600;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 180px;
+    }
+
+    tr.team-ct td { background: var(--bg-row-ct); }
+    tr.team-t td  { background: var(--bg-row-t); }
+    tr.team-row-sep td {
+      height: 2px !important; padding: 0 !important;
+      background: linear-gradient(90deg, transparent, rgba(124,58,237,0.4), transparent);
+      border: none;
+    }
+
+    .k    { color: var(--win-green); font-weight: 600; }
+    .d    { color: var(--lose-red); font-weight: 600; }
+    .a    { color: var(--stat-blue); font-weight: 500; }
+    .hs   { color: var(--stat-yellow); font-weight: 600; }
+    .multi{ color: var(--stat-yellow); }
+    .clutch { color: var(--stat-purple); font-weight: 600; }
+    .adr  { color: var(--stat-blue); font-weight: 500; }
+    .rating { font-weight: 700; }
+    .rating.good { color: var(--win-green); }
+    .rating.neutral { color: var(--text-primary); }
+    .rating.bad { color: var(--lose-red); }
+    .mvp-chip {
+      display: inline-block;
+      padding: 2px 8px;
+      background: var(--accent-soft);
+      color: var(--accent-light);
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* Timeline */
+    .timeline-row td {
+      padding: 16px 12px !important;
+      background: var(--bg-timeline) !important;
+      border-top: 1px solid var(--border-strong);
+      border-bottom: 1px solid var(--border-strong);
+    }
+    .timeline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      align-items: center;
+    }
+    .round-dot {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 30px;
+      height: 30px;
+      padding: 0 6px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      cursor: default;
+      border: 1px solid transparent;
+      transition: transform 0.1s ease;
+    }
+    .round-dot:hover { transform: translateY(-1px); }
+    .round-dot.ct {
+      background: rgba(59, 130, 246, 0.18);
+      color: #93c5fd;
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+    .round-dot.t {
+      background: rgba(239, 68, 68, 0.18);
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+    .round-dot.clutch {
+      box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.8) inset;
+    }
+
+    .swap-marker {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      height: 30px;
+      border-radius: 6px;
+      background: linear-gradient(90deg,
+        rgba(59, 130, 246, 0.14) 0%,
+        rgba(124, 58, 237, 0.22) 50%,
+        rgba(239, 68, 68, 0.14) 100%);
+      border: 1px solid var(--border-strong);
+      color: var(--accent-light);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      margin: 0 auto 12px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Round Detail Modal */
+    .round-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+    }
+    .modal-content {
+      position: relative;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: rgba(124, 58, 237, 0.15);
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-header h3 {
+      margin: 0;
+      font-size: 16px;
+      color: var(--text-primary);
+    }
+    .modal-close {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .modal-close:hover {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--lose-red);
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+    .modal-body {
+      padding: 16px 20px;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+    .detail-event {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--border);
+      font-size: 13px;
+    }
+    .detail-event:last-child { border-bottom: none; }
+    .detail-time {
+      color: var(--text-muted);
+      font-size: 11px;
+      min-width: 45px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .detail-attacker { color: #4ade80; font-weight: 600; min-width: 80px; }
+    .detail-weapon { color: #fbbf24; font-size: 12px; flex: 1; }
+    .detail-headshot { color: var(--lose-red); font-size: 11px; font-weight: 600; }
+    .detail-victim { color: #f87171; min-width: 80px; text-align: right; }
+    .detail-bomb {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--border);
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .detail-empty {
+      color: var(--text-muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    /* Settings Panel */
+    .settings-panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-card), var(--shadow-inner);
+    }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .settings-row:last-child { margin-bottom: 0; }
+
+    .settings-label {
+      min-width: 160px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .settings-path {
+      flex: 1;
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .settings-path.set { color: var(--text-primary); }
+
+    .settings-btn-small {
+      padding: 8px 14px;
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .settings-btn-small:hover {
+      background: var(--accent-soft);
+      color: var(--accent-light);
+      border-color: var(--border-strong);
+    }
+
+    /* Lang Toggle */
+    .lang-toggle { display: flex; gap: 6px; }
+    .lang-btn {
+      padding: 8px 14px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    .lang-btn:hover { background: var(--bg-surface-2); color: var(--accent-light); border-color: var(--border-strong); }
+    .lang-btn.active { background: var(--accent-soft); color: var(--accent-light); border-color: var(--border-strong); }
+
+    /* Footer */
+    .footer-info {
+      margin-top: 18px;
+      padding: 14px 20px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+    .footer-info strong { color: var(--text-secondary); }
+
+    /* Section */
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Win/Loss badge */
+    .result-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .result-badge.win { background: rgba(34, 197, 94, 0.2); color: var(--win-green); }
+    .result-badge.lose { background: rgba(239, 68, 68, 0.2); color: var(--lose-red); }
+    .result-badge.draw { background: rgba(251, 191, 36, 0.2); color: var(--stat-yellow); }
+
+    .win-loss-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    select {
+      -webkit-app-region: no-drag;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Custom Title Bar -->
+<div class="titlebar">
+  <div class="titlebar-left">
+      <img src="logo.png" class="titlebar-icon" alt="logo" style="width:20px; height:20px; object-fit:contain; border-radius:4px;">
+      <div class="titlebar-title" id="titlebar-title">CS2 Match Stats</div>
+    </div>
+  <div class="titlebar-right">
+    <div class="titlebar-btn" onclick="window.electronAPI.window.minimize()" title="Minimize">
+      <svg viewBox="0 0 12 12"><rect x="1" y="5.5" width="10" height="1" fill="currentColor"/></svg>
+    </div>
+    <div class="titlebar-btn" onclick="toggleMaximize()" title="Maximize">
+      <svg viewBox="0 0 12 12" id="maximize-icon">
+        <rect x="1.5" y="1.5" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1"/>
+      </svg>
+    </div>
+    <div class="titlebar-btn close" onclick="window.electronAPI.window.close()" title="Close">
+      <svg viewBox="0 0 12 12"><line x1="2" y1="2" x2="10" y2="10" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="2" x2="2" y2="10" stroke="currentColor" stroke-width="1.5"/></svg>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="app">
+  <!-- JS renders content here -->
+</div>
+
+<script>
+const state = {
+  lang: 'zh',
+  currentView: 'main',
+  currentMatch: null,
+  currentMatchFilename: null,
+  matches: [],
+  allMatches: [],
+  playerNames: [],
+  selectedPlayer: null,
+  playerTeamMap: {},
+  scanStatus: null
+};
+
+// Map names (Chinese)
+const MAP_NAMES = {
+  'de_dust2': '炙热沙城II',
+  'de_mirage': '荒漠迷城',
+  'de_inferno': '炼狱小镇',
+  'de_train': '列车停放站',
+  'de_nuke': '核子危机',
+  'de_cache': '死城之谜',
+  'de_cobblestone': '古堡激战',
+  'de_vertigo': '殒命大厦',
+  'de_canals': '运河水城',
+  'de_ruby': '红宝石酒镇',
+  'de_zoo': '动物园',
+  'de_overpass': '死亡游乐园',
+  'de_ancient': '远古遗迹',
+  'de_anubis': '阿努比斯',
+  'cs_workout': '健身中心',
+  'cs_agency': '办公大楼',
+  'cs_office': '办公室',
+  'cs_italy': '意大利小镇',
+  'cs_assault': '仓库突击',
+  'ar_baggage': '行李仓库',
+  'ar_shoots': '山林小寨',
+  'de_lake': '湖畔激战',
+  'de_stmarc': '圣马克镇'
+};
+
+function getMapName(key) {
+  if (!key) return 'Unknown';
+  if (state.lang === 'en') {
+    const lower = key.toLowerCase();
+    const prefixes = ['de_', 'cs_', 'ar_'];
+    let name = lower;
+    for (const prefix of prefixes) {
+      if (name.startsWith(prefix)) {
+        name = name.substring(prefix.length);
+        break;
+      }
+    }
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  }
+  return MAP_NAMES[key.toLowerCase()] || key;
+}
+
+// Weapon names
+const WEAPON_NAMES_ZH = {
+  'glock': 'Glock-18', 'hkp2000': 'P2000', 'usp_silencer': 'USP-S',
+  'p250': 'P250', 'cz75a': 'CZ75-Auto', 'fiveseven': 'Five-SeveN',
+  'tec9': 'Tec-9', 'elite': '双持贝瑞塔', 'deagle': '沙漠之鹰',
+  'revolver': 'R8 左轮', 'taser': '电击枪', 'mac10': 'MAC-10',
+  'mp9': 'MP9', 'mp7': 'MP7', 'mp5sd': 'MP5-SD', 'ump45': 'UMP-45',
+  'p90': 'P90', 'bizon': 'PP 野牛', 'ak47': 'AK-47',
+  'galilar': 'Galil AR', 'famas': 'FAMAS', 'm4a1': 'M4A4',
+  'm4a1_silencer': 'M4A1-S 消音', 'aug': 'AUG', 'sg556': 'SG553',
+  'ssg08': 'SSG08 鸟狙', 'awp': 'AWP', 'g3sg1': 'G3SG1',
+  'scar20': 'SCAR20', 'nova': 'Nova', 'xm1014': 'XM1014',
+  'mag7': 'MAG-7', 'sawedoff': '截短霰弹枪', 'm249': 'M249',
+  'negev': '内格夫', 'hegrenade': '高爆手雷', 'flashbang': '闪光弹',
+  'smokegrenade': '烟雾弹', 'molotov': '燃烧瓶', 'incgrenade': '燃烧弹',
+  'decoy': '诱饵弹', 'c4': 'C4 炸弹', 'knife': '匕首', 'knife_t': '匕首'
+};
+
+function getWeaponName(key) {
+  if (!key) return '';
+  return WEAPON_NAMES_ZH[key.toLowerCase()] || key;
+}
+
+// i18n
+const i18n = {
+  en: {
+    appTitle: 'CS2 Match Stats', matches: 'Matches', refresh: 'Refresh',
+    back: 'Back', noMatches: 'No match data', noMatchesDesc: 'Please play a match first.',
+    map: 'Map', date: 'Date', duration: 'Duration', rounds: 'Rounds',
+    ct: 'CT', t: 'T', player: 'Player', kills: 'K', deaths: 'D', assists: 'A',
+    headshot: 'HS%', firstKill: 'FK', multiKill: 'MK', clutch: 'Clutch',
+    adr: 'ADR', rating: 'Rating', mvp: 'MVP', sideSwap: 'Swap',
+    loading: 'Loading...', loadingMatch: 'Loading match...',
+    error: 'Error', round: 'Round', winner: 'Winner', events: 'Events',
+    note: 'All data comes from the server plugin.',
+    userStats: 'Player Statistics', last10Matches: 'Last 10 Matches',
+    selectPlayer: 'Select Player', settings: 'Settings',
+    steamPath: 'Steam Path', csgoPath: 'CS2 Path', matchHistory: 'Match History',
+    pluginFound: 'Plugin Found', pluginNotFound: 'Plugin Not Found',
+    counterStrikeSharp: 'Counter-Strike Sharp', browse: 'Browse',
+    rescan: 'Rescan', kda: 'KDA', winRate: 'Win Rate',
+    totalMatches: 'Matches', win: 'W', loss: 'L', draw: 'D',
+    teamA: 'TEAM A', teamB: 'TEAM B', ratingTrend: 'Rating Trend',
+    rws: 'RWS', headshotRate: 'HS Rate'
+  },
+  zh: {
+    appTitle: 'CS2 对局数据', matches: '对局列表', refresh: '刷新',
+    back: '返回', noMatches: '暂无对局', noMatchesDesc: '请先进行一场对局。',
+    map: '地图', date: '日期', duration: '时长', rounds: '回合',
+    ct: 'CT', t: 'T', player: '玩家', kills: '击杀', deaths: '死亡', assists: '助攻',
+    headshot: '爆头率', firstKill: '首杀', multiKill: '多杀', clutch: '残局',
+    adr: 'ADR', rating: 'Rating', mvp: 'MVP', sideSwap: '换边',
+    loading: '加载中...', loadingMatch: '正在加载对局...',
+    error: '错误', round: '回合', winner: '胜者', events: '事件',
+    note: '全部数据来自服务器插件。',
+    userStats: '玩家数据统计', last10Matches: '最近10场',
+    selectPlayer: '选择玩家', settings: '设置',
+    steamPath: 'Steam路径', csgoPath: 'CS2路径', matchHistory: '比赛记录',
+    pluginFound: '插件已安装', pluginNotFound: '插件未安装',
+    counterStrikeSharp: 'Counter-Strike Sharp', browse: '浏览',
+    rescan: '重新扫描', kda: 'KDA', winRate: '胜率',
+    totalMatches: '比赛场次', win: '胜', loss: '负', draw: '平',
+    teamA: 'TEAM A', teamB: 'TEAM B', ratingTrend: 'Rating 走势',
+    rws: 'RWS', headshotRate: '爆头率'
+  }
+};
+
+function _(key) { return i18n[state.lang][key] || key; }
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[ch]);
+}
+
+// Calculate player stats from last N matches
+function calculatePlayerStats(playerName, matches, count = 10) {
+  const recentMatches = matches.slice(0, count);
+  const stats = {
+    playerName: playerName,
+    totalMatches: 0,
+    totalKills: 0,
+    totalDeaths: 0,
+    totalAssists: 0,
+    totalHeadshots: 0,
+    totalDamage: 0,
+    totalMVPs: 0,
+    wins: 0,
+    losses: 0,
+    draws: 0,
+    avgRating: 0,
+    ratings: [],
+    rws: 0
+  };
+
+  for (const match of recentMatches) {
+    let player = null;
+    let playerTeam = null;
+
+    if (match.Teams?.CT?.Players) {
+      player = Object.values(match.Teams.CT.Players)
+        .find(p => p.Name?.toLowerCase() === playerName.toLowerCase());
+      if (player) playerTeam = 'CT';
+    }
+    if (!player && match.Teams?.T?.Players) {
+      player = Object.values(match.Teams.T.Players)
+        .find(p => p.Name?.toLowerCase() === playerName.toLowerCase());
+      if (player) playerTeam = 'T';
+    }
+
+    if (!player) continue;
+
+    stats.totalMatches++;
+    stats.totalKills += player.Kills || 0;
+    stats.totalDeaths += player.Deaths || 0;
+    stats.totalAssists += player.Assists || 0;
+    stats.totalHeadshots += player.Headshots || 0;
+    stats.totalDamage += player.TotalDamageDealt || 0;
+    stats.totalMVPs += player.MVPs || 0;
+    stats.rws += player.RWS || player.Score || 0;
+    stats.ratings.push(player.Rating || 1.0);
+
+    const ctScore = match.Teams?.CT?.Score || 0;
+    const tScore = match.Teams?.T?.Score || 0;
+    
+    if (playerTeam === 'CT') {
+      if (ctScore > tScore) stats.wins++;
+      else if (ctScore < tScore) stats.losses++;
+      else stats.draws++;
+    } else if (playerTeam === 'T') {
+      if (tScore > ctScore) stats.wins++;
+      else if (tScore < ctScore) stats.losses++;
+      else stats.draws++;
+    }
+  }
+
+  if (stats.totalMatches > 0) {
+    stats.avgKills = (stats.totalKills / stats.totalMatches).toFixed(1);
+    stats.avgDeaths = (stats.totalDeaths / stats.totalMatches).toFixed(1);
+    stats.avgAssists = (stats.totalAssists / stats.totalMatches).toFixed(1);
+    stats.avgRating = (stats.ratings.reduce((a, b) => a + b, 0) / stats.ratings.length).toFixed(2);
+    stats.kda = stats.totalDeaths > 0 
+      ? ((stats.totalKills + stats.totalAssists) / stats.totalDeaths).toFixed(2)
+      : stats.totalKills.toFixed(2);
+    const totalGames = stats.wins + stats.losses + stats.draws;
+    stats.winRate = totalGames > 0 ? ((stats.wins / totalGames) * 100).toFixed(1) : 0;
+    stats.hsRate = stats.totalKills > 0 ? Math.round((stats.totalHeadshots / stats.totalKills) * 100) : 0;
+    stats.adr = stats.totalMatches > 0 ? Math.round(stats.totalDamage / stats.totalMatches) : 0;
+    stats.avgRws = stats.totalMatches > 0 ? (stats.rws / stats.totalMatches).toFixed(1) : '0.0';
+  }
+
+  return stats;
+}
+
+// Build playerTeamMap
+function buildPlayerTeamMap(match) {
+  state.playerTeamMap = {};
+  const allPlayers = [
+    ...Object.values(match.Teams?.CT?.Players || {}),
+    ...Object.values(match.Teams?.T?.Players || {})
+  ];
+  
+  for (const p of allPlayers) {
+    if (p.Name) {
+      state.playerTeamMap[p.Name.toLowerCase()] = (p.InitialTeam || p.TeamKey || '').toUpperCase();
+    }
+  }
+}
+
+// SVG Ring Chart
+function renderRingChart(rating) {
+  const r = 60;
+  const strokeWidth = 12;
+  const circumference = 2 * Math.PI * r;
+  
+  let progress = Math.min(Math.max((rating - 0.5) / 1.5, 0), 1);
+  const offset = circumference * (1 - progress);
+  
+  let color = '#ef4444';
+  if (rating >= 1.15) color = '#22c55e';
+  else if (rating >= 0.85) color = '#f0f3f8';
+  
+  return `
+    <div class="ring-chart-container">
+      <svg width="140" height="140" viewBox="0 0 140 140">
+        <circle cx="70" cy="70" r="${r}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="${strokeWidth}"/>
+        <circle cx="70" cy="70" r="${r}" fill="none" stroke="${color}" stroke-width="${strokeWidth}"
+          stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
+          stroke-linecap="round"
+          style="transition: stroke-dashoffset 0.6s ease;"/>
+      </svg>
+      <div class="ring-center">
+        <div class="ring-value ${rating >= 1.15 ? 'good' : rating >= 0.85 ? 'neutral' : 'bad'}">${rating.toFixed(2)}</div>
+        <div class="ring-label">${_('rating')}</div>
+      </div>
+    </div>
+  `;
+}
+
+// SVG Line Chart for Rating Trend
+function renderRatingTrendChart(ratings) {
+  if (!ratings || ratings.length === 0) {
+    return '<div class="loading" style="padding:40px;">No data</div>';
+  }
+
+  const width = 800;
+  const height = 140;
+  const padding = { top: 20, right: 20, bottom: 20, left: 30 };
+  const chartW = width - padding.left - padding.right;
+  const chartH = height - padding.top - padding.bottom;
+
+  const minRating = Math.max(0.3, Math.min(...ratings) - 0.1);
+  const maxRating = 3.0;
+  const range = maxRating - minRating;
+
+  const points = ratings.map((r, i) => {
+    const x = padding.left + (ratings.length === 1 ? chartW / 2 : (i / (ratings.length - 1)) * chartW);
+    const y = padding.top + chartH - ((r - minRating) / range) * chartH;
+    return { x, y, r };
+  });
+
+  let pathD = '';
+  points.forEach((p, i) => {
+    if (i === 0) pathD += `M ${p.x} ${p.y}`;
+    else pathD += ` L ${p.x} ${p.y}`;
+  });
+
+  let areaD = pathD + ` L ${points[points.length - 1].x} ${padding.top + chartH} L ${points[0].x} ${padding.top + chartH} Z`;
+
+  const gridLines = [];
+  const steps = 4;
+  for (let i = 0; i <= steps; i++) {
+    const y = padding.top + (chartH / steps) * i;
+    const val = maxRating - (range / steps) * i;
+    gridLines.push({ y, val: val.toFixed(1) });
+  }
+
+  return `
+    <svg viewBox="0 0 ${width} ${height}" width="100%" height="100%" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="rgba(124, 58, 237, 0.4)"/>
+          <stop offset="100%" stop-color="rgba(124, 58, 237, 0)"/>
+        </linearGradient>
+        <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#a78bfa"/>
+          <stop offset="100%" stop-color="#7c3aed"/>
+        </linearGradient>
+      </defs>
+      
+      ${gridLines.map(g => `
+        <line x1="${padding.left}" y1="${g.y}" x2="${width - padding.right}" y2="${g.y}"
+          stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+        <text x="4" y="${g.y + 4}" fill="rgba(107,114,128,0.6)" font-size="10" font-family="JetBrains Mono">${g.val}</text>
+      `).join('')}
+      
+      <path d="${areaD}" fill="url(#areaGradient)"/>
+      <path d="${pathD}" fill="none" stroke="url(#lineGradient)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      
+      ${points.map(p => `
+        <circle cx="${p.x}" cy="${p.y}" r="4" fill="#0b0e14" stroke="url(#lineGradient)" stroke-width="2"/>
+        <title>${p.r.toFixed(2)}</title>
+      `).join('')}
+    </svg>
+  `;
+}
+
+// Render
+function render() {
+  const app = document.getElementById('app');
+  
+  let content = renderHeader();
+  
+  if (state.currentView === 'settings') {
+    content += renderSettings();
+  } else if (state.currentView === 'match' && state.currentMatch) {
+    content += renderMatchDetail(state.currentMatch);
+  } else {
+    content += renderUserStats();
+    content += renderMatchList();
+  }
+  
+  content += renderFooter();
+  
+  if (state.currentView === 'match') {
+    content += renderRoundDetailModal();
+  }
+  
+  app.innerHTML = content;
+  
+  document.getElementById('titlebar-title').textContent = _('appTitle');
+}
+
+function toggleMaximize() {
+  window.electronAPI.window.maximize().then(isMax => {
+    const icon = document.getElementById('maximize-icon');
+    if (isMax) {
+      icon.innerHTML = '<rect x="3" y="1" width="7" height="7" fill="none" stroke="currentColor" stroke-width="1"/><rect x="1" y="3" width="7" height="7" fill="var(--bg-surface)" stroke="currentColor" stroke-width="1"/>';
+    } else {
+      icon.innerHTML = '<rect x="1.5" y="1.5" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1"/>';
+    }
+  });
+}
+
+function renderHeader() {
+  return `
+    <div class="page-header">
+      <div>
+        <div class="page-title"><span class="accent">${_('appTitle')}</span></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="lang-toggle">
+          <button class="lang-btn ${state.lang==='zh'?'active':''}" onclick="setLang('zh')">中文</button>
+          <button class="lang-btn ${state.lang==='en'?'active':''}" onclick="setLang('en')">EN</button>
+        </div>
+        <button class="settings-btn" onclick="showSettings()">⚙ ${_('settings')}</button>
+        ${state.currentView === 'match'
+          ? `<button class="back-btn" onclick="backToMain()">← ${_('back')}</button>`
+          : `<button class="refresh-btn" onclick="loadData()">↻ ${_('refresh')}</button>`
+        }
+      </div>
+    </div>
+  `;
+}
+
+function renderFooter() {
+  return `<div class="footer-info">💡 ${_('note')}</div>`;
+}
+
+// User Stats Section - Redesigned
+function renderUserStats() {
+  let statsHtml = '';
+  
+  if (state.playerNames.length > 0) {
+    const playerSelector = `
+      <div class="player-selector">
+        <select id="player-select" onchange="selectPlayer(this.value)">
+          <option value="">${_('selectPlayer')}</option>
+          ${state.playerNames.map(name => 
+            `<option value="${escapeHtml(name)}" ${state.selectedPlayer === name ? 'selected' : ''}>${escapeHtml(name)}</option>`
+          ).join('')}
+        </select>
+      </div>
+    `;
+
+    if (state.selectedPlayer && state.allMatches.length > 0) {
+      const stats = calculatePlayerStats(state.selectedPlayer, state.allMatches, 10);
+      
+      const ratingNum = parseFloat(stats.avgRating || 1.0);
+      const kdaNum = parseFloat(stats.kda || 0);
+      const kdaClass = kdaNum >= 1.5 ? 'good' : kdaNum >= 1.0 ? 'neutral' : 'bad';
+      
+      statsHtml = `
+        <div class="stats-card">
+          <div class="stats-card-header">
+            <div class="stats-card-title">${_('userStats')} · ${escapeHtml(state.selectedPlayer)} · ${_('last10Matches')}</div>
+            ${playerSelector}
+          </div>
+          
+          <div class="stats-main">
+            <div class="stats-ring-section">
+              ${renderRingChart(ratingNum)}
+              <div class="win-loss-row">
+                <span class="result-badge win">${stats.wins || 0} ${_('win')}</span>
+                <span class="result-badge lose">${stats.losses || 0} ${_('loss')}</span>
+                <span class="result-badge draw">${stats.draws || 0} ${_('draw')}</span>
+              </div>
+            </div>
+            
+            <div class="stats-grid-section">
+              <div class="stats-grid">
+                <div class="stat-item">
+                  <div class="stat-value ${kdaClass}">${stats.kda || '0.00'}</div>
+                  <div class="stat-label">${_('kda')}</div>
+                </div>
+                
+                <div class="stat-item">
+                  <div class="stat-value">${stats.adr || 0}</div>
+                  <div class="stat-label">${_('adr')}</div>
+                </div>
+                
+                <div class="stat-item">
+                  <div class="stat-value">${stats.avgRws || '0.0'}</div>
+                  <div class="stat-label">${_('rws')}</div>
+                </div>
+                
+                <div class="stat-item">
+                  <div class="stat-value">${stats.hsRate || 0}%</div>
+                  <div class="stat-label">${_('headshotRate')}</div>
+                </div>
+                
+                <div class="stat-item">
+                  <div class="stat-value">${stats.totalMatches || 0}</div>
+                  <div class="stat-label">${_('totalMatches')}</div>
+                </div>
+                
+                <div class="stat-item">
+                  <div class="stat-value">${stats.winRate || '0'}%</div>
+                  <div class="stat-label">${_('winRate')}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="rating-trend-section">
+            <div class="rating-trend-title">${_('ratingTrend')}</div>
+            <div class="rating-chart-container">
+              ${renderRatingTrendChart(stats.ratings.slice().reverse())}
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      statsHtml = `
+        <div class="stats-card">
+          <div class="stats-card-header">
+            <div class="stats-card-title">${_('userStats')}</div>
+            ${playerSelector}
+          </div>
+          <div class="loading">${_('selectPlayer')}</div>
+        </div>
+      `;
+    }
+  } else {
+    statsHtml = `
+      <div class="stats-card">
+        <div class="stats-card-title">${_('userStats')}</div>
+        <div class="loading">${_('noMatches')}</div>
+      </div>
+    `;
+  }
+  
+  return `<div class="user-stats-section">${statsHtml}</div>`;
+}
+
+// Match List
+function renderMatchList() {
+  if (!state.matches || state.matches.length === 0) {
+    return `
+      <div class="section-title">${_('matches')}</div>
+      <div class="loading">${_('noMatches')}<br/><span style="font-size:12px; margin-top:8px; display:block;">${_('noMatchesDesc')}</span></div>
+    `;
+  }
+
+  return `
+    <div class="section-title">${_('matches')}</div>
+    ${state.matches.map((summary, idx) => {
+      const totalRounds = summary.roundCount || 0;
+      const map = getMapName(summary.mapName);
+      const date = summary.startTime || summary.timestamp || '';
+
+      return `
+        <div class="match-card" onclick="openMatch(${idx})">
+          <div class="match-info">
+            <div class="match-map">${escapeHtml(map)}</div>
+            <div class="match-meta">
+              <span>${date}</span>
+              <span>· ${totalRounds} ${_('rounds')}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('')}
+  `;
+}
+
+// Match Detail
+function renderMatchDetail(match) {
+  const rounds = match.Rounds || [];
+
+  const ctPlayers = [];
+  const tPlayers = [];
+  const allPlayers = [
+    ...Object.values(match.Teams?.CT?.Players || {}),
+    ...Object.values(match.Teams?.T?.Players || {})
+  ];
+
+  const seen = new Set();
+  const uniquePlayers = [];
+  for (const p of allPlayers) {
+    if (!p || !p.UniqueId) continue;
+    if (seen.has(p.UniqueId)) continue;
+    seen.add(p.UniqueId);
+    uniquePlayers.push(p);
+  }
+
+  for (const p of uniquePlayers) {
+    const team = (p.InitialTeam || p.TeamKey || '').toUpperCase();
+    if (team === 'CT') ctPlayers.push(p);
+    else if (team === 'T') tPlayers.push(p);
+  }
+
+  buildPlayerTeamMap(match);
+
+  let firstSwapIndex = -1;
+  for (let i = 0; i < rounds.length; i++) {
+    if (rounds[i]?.SideSwapped) { firstSwapIndex = i; break; }
+  }
+  if (firstSwapIndex < 0) {
+    for (let i = 0; i < rounds.length; i++) {
+      const rNum = rounds[i].RoundNumber || (i + 1);
+      if (rNum === 13) { firstSwapIndex = i; break; }
+    }
+  }
+
+  let ctScore = 0, tScore = 0;
+  for (let i = 0; i < rounds.length; i++) {
+    const w = rounds[i].Winner;
+    if (!w) continue;
+    const swapped = firstSwapIndex >= 0 && i >= firstSwapIndex;
+    const initialSide = swapped ? (w === 'CT' ? 'T' : 'CT') : w;
+    if (initialSide === 'CT') ctScore++;
+    else if (initialSide === 'T') tScore++;
+  }
+
+  const renderPlayerRow = (p) => {
+    const hs = p.Kills > 0 ? Math.round((p.Headshots || 0) / p.Kills * 100) : 0;
+    const adr = rounds.length > 0 ? Math.round((p.TotalDamageDealt || 0) / rounds.length) : 0;
+    const rating = (typeof p.Rating === 'number' && p.Rating > 0) ? p.Rating.toFixed(2) : '1.00';
+    const ratingNum = parseFloat(rating);
+    const ratingCls = ratingNum >= 1.15 ? 'good' : (ratingNum >= 0.85 ? 'neutral' : 'bad');
+    const team = (p.InitialTeam || p.TeamKey || '').toUpperCase();
+    const rowCls = team === 'CT' ? 'team-ct' : 'team-t';
+
+    return `
+      <tr class="${rowCls}">
+        <td class="player-col">${escapeHtml(p.Name || 'Unknown')}</td>
+        <td><span class="k">${p.Kills || 0}</span></td>
+        <td><span class="d">${p.Deaths || 0}</span></td>
+        <td><span class="a">${p.Assists || 0}</span></td>
+        <td><span class="hs">${hs}%</span></td>
+        <td>${p.FirstKills || 0}</td>
+        <td><span class="multi">${p.MultiKills || 0}</span></td>
+        <td><span class="clutch">${p.Clutches || 0}</span></td>
+        <td><span class="adr">${adr}</span></td>
+        <td>${Math.round((p.RoundsSurvived || 0) / Math.max(1, rounds.length) * 100)}%</td>
+        <td><span class="rating ${ratingCls}">${rating}</span></td>
+        <td>${p.MVPs > 0 ? `<span class="mvp-chip">${p.MVPs} MVP</span>` : '-'}</td>
+      </tr>
+    `;
+  };
+
+  const renderTimeline = () => {
+    const cells = [];
+    for (let i = 0; i < rounds.length; i++) {
+      const r = rounds[i];
+      const w = r.Winner;
+      const rNum = r.RoundNumber || (i + 1);
+      const swapped = firstSwapIndex >= 0 && i >= firstSwapIndex;
+      const initialSide = (swapped && w) ? (w === 'CT' ? 'T' : 'CT') : w;
+      const cls = initialSide === 'CT' ? 'ct' : 't';
+      const title = `Round ${rNum} - ${initialSide || '?'} win`;
+      cells.push(`<span class="round-dot ${cls}" title="${title}" onclick="showRoundDetail(${i})" style="cursor:pointer;">${rNum}</span>`);
+    }
+    if (firstSwapIndex >= 0 && firstSwapIndex < cells.length) {
+      cells.splice(firstSwapIndex, 0, `<span class="swap-marker">${_('sideSwap')}</span>`);
+    }
+    return cells.length > 0 ? cells.join('') : '<span style="color:var(--text-muted);font-size:12px;">—</span>';
+  };
+
+  const totalCols = 12;
+
+  if (ctPlayers.length === 0 && tPlayers.length === 0 && rounds.length === 0) {
+    return `<div class="loading" style="margin-top:40px;">${_('noMatches')}</div>`;
+  }
+
+  return `
+    <div class="score-panel">
+      <div class="team-label"><span class="team-dot ct"></span>${_('teamA')}</div>
+      <div style="text-align:center;">
+        <div class="big-score"><span class="ct">${ctScore}</span><span class="sep">:</span><span class="t">${tScore}</span></div>
+        <div class="match-subtitle">${getMapName(match.MapName)} · ${rounds.length} ${_('rounds')} · ${match.StartTime || ''}</div>
+      </div>
+      <div class="team-label" style="justify-content:flex-end;">${_('teamB')}<span class="team-dot t"></span></div>
+    </div>
+
+    <div class="stats-table-wrap">
+      <table class="stats-table">
+        <tbody>
+          <tr>
+            <td colspan="${totalCols}" style="padding:10px 12px;background:rgba(59,130,246,0.16);color:#93c5fd;font-weight:700;font-size:13px;letter-spacing:1px;border-top:1px solid rgba(59,130,246,0.3);">◉ ${_('teamA')}</td>
+          </tr>
+          <tr>
+            <th class="player-col" style="padding:8px 12px;text-align:left;font-size:12px;color:var(--text-muted);font-weight:600;background:rgba(255,255,255,0.03);border-bottom:1px solid var(--border);">${_('player')}</th>
+            <th>${_('kills')}</th><th>${_('deaths')}</th><th>${_('assists')}</th>
+            <th>${_('headshot')}</th><th>${_('firstKill')}</th><th>${_('multiKill')}</th>
+            <th>${_('clutch')}</th><th>${_('adr')}</th><th>Surv%</th>
+            <th>${_('rating')}</th><th>${_('mvp')}</th>
+          </tr>
+          ${ctPlayers.length > 0 ? ctPlayers.map(p => renderPlayerRow(p)).join('') : `
+            <tr class="team-ct"><td colspan="${totalCols}" style="padding:8px;color:var(--text-muted);font-size:12px;">— No CT data —</td></tr>
+          `}
+          <tr class="team-row-sep"><td colspan="${totalCols}"></td></tr>
+          <tr class="timeline-row">
+            <td colspan="${totalCols}"><div class="timeline">${renderTimeline()}</div></td>
+          </tr>
+          <tr class="team-row-sep"><td colspan="${totalCols}"></td></tr>
+          <tr>
+            <td colspan="${totalCols}" style="padding:10px 12px;background:rgba(239,68,68,0.16);color:#fca5a5;font-weight:700;font-size:13px;letter-spacing:1px;border-top:1px solid rgba(239,68,68,0.3);">◉ ${_('teamB')}</td>
+          </tr>
+          <tr>
+            <th class="player-col" style="padding:8px 12px;text-align:left;font-size:12px;color:var(--text-muted);font-weight:600;background:rgba(255,255,255,0.03);border-bottom:1px solid var(--border);">${_('player')}</th>
+            <th>${_('kills')}</th><th>${_('deaths')}</th><th>${_('assists')}</th>
+            <th>${_('headshot')}</th><th>${_('firstKill')}</th><th>${_('multiKill')}</th>
+            <th>${_('clutch')}</th><th>${_('adr')}</th><th>Surv%</th>
+            <th>${_('rating')}</th><th>${_('mvp')}</th>
+          </tr>
+          ${tPlayers.length > 0 ? tPlayers.map(p => renderPlayerRow(p)).join('') : `
+            <tr class="team-t"><td colspan="${totalCols}" style="padding:8px;color:var(--text-muted);font-size:12px;">— No T data —</td></tr>
+          `}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// Round Detail Modal
+function renderRoundDetailModal() {
+  return `
+    <div id="round-detail-modal" class="round-modal" style="display:none;">
+      <div class="modal-overlay" onclick="closeRoundDetail()"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modal-round-title">回合详情</h3>
+          <button class="modal-close" onclick="closeRoundDetail()">X</button>
+        </div>
+        <div id="modal-round-content" class="modal-body"></div>
+      </div>
+    </div>
+  `;
+}
+
+function showRoundDetail(idx) {
+  const round = state.currentMatch?.Rounds?.[idx];
+  if (!round) return;
+
+  const rNum = round.RoundNumber || (idx + 1);
+  const winner = round.Winner === 'CT' ? _('teamA') : round.Winner === 'T' ? _('teamB') : '???';
+  const events = round.Events || [];
+
+  document.getElementById('modal-round-title').textContent = `R${rNum} - ${winner} 胜`;
+
+  const deaths = events.filter(e => e.Type === 'death');
+  const bombs = events.filter(e => e.Type === 'bomb_planted' || e.Type === 'bomb_defused');
+
+  let html = '';
+
+  if (deaths.length > 0) {
+    deaths.forEach(e => {
+      const weaponName = getWeaponName(e.Weapon);
+      const attackerTeam = state.playerTeamMap[(e.Attacker || '').toLowerCase()] || '';
+      const victimTeam = state.playerTeamMap[(e.Victim || '').toLowerCase()] || '';
+      const attackerColor = attackerTeam === 'CT' ? 'var(--ct-color)' : (attackerTeam === 'T' ? 'var(--t-color)' : 'var(--text-secondary)');
+      const victimColor = victimTeam === 'CT' ? 'var(--ct-color)' : (victimTeam === 'T' ? 'var(--t-color)' : 'var(--text-secondary)');
+      html += `
+        <div class="detail-event">
+          <span class="detail-time">${e.Time?.toFixed(1) || '0.0'}s</span>
+          <span style="color:${attackerColor};font-weight:600;">${escapeHtml(e.Attacker || 'Unknown')}</span>
+          <span class="detail-weapon">${escapeHtml(weaponName)}${e.Headshot ? ' (爆头)' : ''}</span>
+          <span style="color:${victimColor};">${escapeHtml(e.Victim || 'Unknown')}</span>
+        </div>
+      `;
+    });
+  }
+
+  if (bombs.length > 0) {
+    bombs.forEach(e => {
+      const isPlant = e.Type === 'bomb_planted';
+      const playerTeam = state.playerTeamMap[(e.Player || '').toLowerCase()] || '';
+      const playerColor = playerTeam === 'CT' ? 'var(--ct-color)' : (playerTeam === 'T' ? 'var(--t-color)' : 'var(--text-secondary)');
+      html += `
+        <div class="detail-bomb">
+          <span class="detail-time">${e.Time?.toFixed(1) || '0.0'}s</span>
+          <span>${isPlant ? '放置C4炸弹' : '拆除C4炸弹'}</span>
+          <span style="color:${playerColor};font-weight:600;">${escapeHtml(e.Player || 'Unknown')}</span>
+        </div>
+      `;
+    });
+  }
+
+  if (html === '') {
+    html = '<div class="detail-empty">本回合无击杀记录</div>';
+  }
+
+  document.getElementById('modal-round-content').innerHTML = html;
+  document.getElementById('round-detail-modal').style.display = 'flex';
+}
+
+function closeRoundDetail() {
+  document.getElementById('round-detail-modal').style.display = 'none';
+}
+
+// Settings
+function renderSettings() {
+  const status = state.scanStatus || {};
+  
+  const getStatusClass = (val) => val ? 'success' : 'error';
+  const getStatusText = (val, trueText, falseText) => val ? trueText : falseText;
+
+  return `
+    <div class="settings-panel">
+      <div class="section-title">${_('settings')}</div>
+      
+      <div class="path-status">
+        <div class="path-status-item ${status.steamPath ? 'success' : 'warning'}">
+          <span class="status-dot ${getStatusClass(status.steamPath)}"></span>
+          <span>${_('steamPath')}: ${status.steamPath || 'Not found'}</span>
+        </div>
+        <div class="path-status-item ${status.csgoPath ? 'success' : 'warning'}">
+          <span class="status-dot ${getStatusClass(status.csgoPath)}"></span>
+          <span>${_('csgoPath')}: ${status.csgoPath || 'Not found'}</span>
+        </div>
+        <div class="path-status-item ${status.matchHistoryPath ? 'success' : 'error'}">
+          <span class="status-dot ${getStatusClass(status.matchHistoryPath)}"></span>
+          <span>${_('matchHistory')}: ${status.matchHistoryPath || 'Not found'}</span>
+        </div>
+        <div class="path-status-item ${status.cs2MatchStatsPluginFound ? 'success' : 'warning'}">
+          <span class="status-dot ${getStatusClass(status.cs2MatchStatsPluginFound)}"></span>
+          <span>${_('pluginFound')}: ${getStatusText(status.cs2MatchStatsPluginFound, '✓', '✗')}</span>
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <span class="settings-label">${_('steamPath')}</span>
+        <span class="settings-path ${status.steamPath ? 'set' : ''}">${status.steamPath || 'Not detected'}</span>
+        <button class="settings-btn-small" onclick="selectPath('steam')">${_('browse')}</button>
+      </div>
+      
+      <div class="settings-row">
+        <span class="settings-label">${_('csgoPath')}</span>
+        <span class="settings-path ${status.csgoPath ? 'set' : ''}">${status.csgoPath || 'Not detected'}</span>
+        <button class="settings-btn-small" onclick="selectPath('csgo')">${_('browse')}</button>
+      </div>
+      
+      <div class="settings-row">
+        <span class="settings-label">${_('matchHistory')}</span>
+        <span class="settings-path ${status.matchHistoryPath ? 'set' : ''}">${status.matchHistoryPath || 'Not detected'}</span>
+        <button class="settings-btn-small" onclick="selectPath('matchHistory')">${_('browse')}</button>
+      </div>
+      
+      <div style="margin-top:20px; display:flex; gap:12px;">
+        <button class="refresh-btn" onclick="rescanPaths()">↻ ${_('rescan')}</button>
+        <button class="back-btn" onclick="backToMain()">← ${_('back')}</button>
+      </div>
+    </div>
+  `;
+}
+
+// Navigation
+function setLang(lang) {
+  state.lang = lang;
+  render();
+}
+
+function backToMain() {
+  state.currentView = 'main';
+  state.currentMatch = null;
+  state.currentMatchFilename = null;
+  render();
+}
+
+function showSettings() {
+  state.currentView = 'settings';
+  render();
+}
+
+function selectPlayer(playerName) {
+  state.selectedPlayer = playerName;
+  try {
+    localStorage.setItem('selectedPlayer', playerName);
+  } catch (e) {}
+  render();
+}
+
+// Data loading
+async function loadData() {
+  const app = document.getElementById('app');
+  app.innerHTML = renderHeader() + `<div class="loading"><div class="spinner"></div>${_('loading')}</div>` + renderFooter();
+
+  try {
+    state.scanStatus = await window.electronAPI.scan.full();
+    
+    const matches = await window.electronAPI.matches.list();
+    state.matches = matches || [];
+    
+    state.allMatches = [];
+    for (const match of state.matches) {
+      const fullMatch = await window.electronAPI.matches.get(match.filename);
+      if (fullMatch && !fullMatch.error) {
+        state.allMatches.push(fullMatch);
+      }
+    }
+    
+    state.playerNames = await window.electronAPI.matches.getAllPlayerNames();
+    
+    if (state.playerNames.length > 0 && !state.selectedPlayer) {
+      let savedPlayer = null;
+      try {
+        savedPlayer = localStorage.getItem('selectedPlayer');
+      } catch (e) {}
+      if (savedPlayer && state.playerNames.includes(savedPlayer)) {
+        state.selectedPlayer = savedPlayer;
+      } else {
+        state.selectedPlayer = state.playerNames[0];
+      }
+    }
+    
+    state.currentView = 'main';
+    state.currentMatch = null;
+    render();
+  } catch (e) {
+    app.innerHTML = renderHeader() + `<div class="loading" style="color:#ef4444;">${_('error')}: ${e.message}</div>` + renderFooter();
+  }
+}
+
+async function openMatch(idx) {
+  const summary = state.matches[idx];
+  if (!summary || !summary.filename) return;
+
+  const app = document.getElementById('app');
+  state.currentMatch = null;
+  app.innerHTML = renderHeader() + `<div class="loading"><div class="spinner"></div>${_('loadingMatch')}</div>` + renderFooter();
+
+  try {
+    const match = await window.electronAPI.matches.get(summary.filename);
+    if (match && !match.error) {
+      state.currentMatch = match;
+      state.currentMatchFilename = summary.filename;
+      state.currentView = 'match';
+    } else {
+      state.currentMatch = null;
+    }
+    render();
+  } catch (e) {
+    app.innerHTML = renderHeader() + `<div class="loading" style="color:#ef4444;">${_('error')}: ${e.message}</div>` + renderFooter();
+  }
+}
+
+async function selectPath(type) {
+  const titles = {
+    steam: 'Select Steam Folder',
+    csgo: 'Select CS2 Folder',
+    matchHistory: 'Select Match History Folder'
+  };
+  
+  const path = await window.electronAPI.scan.selectFolder(titles[type] || 'Select Folder');
+  if (path) {
+    const currentStatus = state.scanStatus || {};
+    const newPaths = { ...currentStatus };
+    
+    if (type === 'steam') newPaths.steamPath = path;
+    else if (type === 'csgo') newPaths.csgoPath = path;
+    else if (type === 'matchHistory') newPaths.matchHistoryPath = path;
+    
+    state.scanStatus = await window.electronAPI.scan.setCustomPaths(
+      newPaths.steamPath,
+      newPaths.csgoPath,
+      newPaths.matchHistoryPath
+    );
+    
+    await loadData();
+  }
+}
+
+async function rescanPaths() {
+  state.scanStatus = await window.electronAPI.scan.full();
+  await loadData();
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  loadData();
+});
+</script>
+
+</body>
+</html>
