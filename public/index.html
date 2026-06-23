@@ -1038,6 +1038,25 @@ function escapeHtml(s) {
   })[ch]);
 }
 
+function formatDateTime(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const da = String(d.getDate()).padStart(2, '0');
+  const h = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  return `${y}-${mo}-${da} ${h}:${mi}`;
+}
+
+function formatSecondsToMinSec(seconds) {
+  const s = Number(seconds) || 0;
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${String(sec).padStart(2, '0')}`;
+}
+
 // Calculate player stats from last N matches
 function calculatePlayerStats(playerName, matches, count = 10) {
   const recentMatches = matches.slice(0, count);
@@ -1412,7 +1431,7 @@ function renderMatchList() {
     ${state.matches.map((summary, idx) => {
       const totalRounds = summary.roundCount || 0;
       const map = getMapName(summary.mapName);
-      const date = summary.startTime || summary.timestamp || '';
+      const date = formatDateTime(summary.startTime || summary.timestamp || '');
 
       return `
         <div class="match-card" onclick="openMatch(${idx})">
@@ -1534,7 +1553,7 @@ function renderMatchDetail(match) {
       <div class="team-label"><span class="team-dot ct"></span>${_('teamA')}</div>
       <div style="text-align:center;">
         <div class="big-score"><span class="ct">${ctScore}</span><span class="sep">:</span><span class="t">${tScore}</span></div>
-        <div class="match-subtitle">${getMapName(match.MapName)} · ${rounds.length} ${_('rounds')} · ${match.StartTime || ''}</div>
+        <div class="match-subtitle">${getMapName(match.MapName)} · ${rounds.length} ${_('rounds')} · ${formatDateTime(match.StartTime || '')}</div>
       </div>
       <div class="team-label" style="justify-content:flex-end;">${_('teamB')}<span class="team-dot t"></span></div>
     </div>
@@ -1619,7 +1638,7 @@ function showRoundDetail(idx) {
       const victimColor = victimTeam === 'CT' ? 'var(--ct-color)' : (victimTeam === 'T' ? 'var(--t-color)' : 'var(--text-secondary)');
       html += `
         <div class="detail-event">
-          <span class="detail-time">${e.Time?.toFixed(1) || '0.0'}s</span>
+          <span class="detail-time">${formatSecondsToMinSec(e.Time || 0)}</span>
           <span style="color:${attackerColor};font-weight:600;">${escapeHtml(e.Attacker || 'Unknown')}</span>
           <span class="detail-weapon">${escapeHtml(weaponName)}${e.Headshot ? ' (爆头)' : ''}</span>
           <span style="color:${victimColor};">${escapeHtml(e.Victim || 'Unknown')}</span>
@@ -1635,7 +1654,7 @@ function showRoundDetail(idx) {
       const playerColor = playerTeam === 'CT' ? 'var(--ct-color)' : (playerTeam === 'T' ? 'var(--t-color)' : 'var(--text-secondary)');
       html += `
         <div class="detail-bomb">
-          <span class="detail-time">${e.Time?.toFixed(1) || '0.0'}s</span>
+          <span class="detail-time">${formatSecondsToMinSec(e.Time || 0)}</span>
           <span>${isPlant ? '放置C4炸弹' : '拆除C4炸弹'}</span>
           <span style="color:${playerColor};font-weight:600;">${escapeHtml(e.Player || 'Unknown')}</span>
         </div>
