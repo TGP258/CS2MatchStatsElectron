@@ -34,7 +34,11 @@ CS2 Match Stats is a desktop application for Counter-Strike 2 match statistics. 
 
 This app supports automatic scanning of CS2 installation directories and match history files, so you can get started quickly without manual path configuration.
 
-> **Note:** This project is the Electron desktop version of [CS2MatchStats](https://github.com/TGP258/CS2_Match_Stats).
+> 🔗 **Original Project:** [CS2MatchStats](https://github.com/TGP258/CS2_Match_Stats)
+>
+> 📦 **Original Project Releases:** [Download CS2MatchStats Plugin](https://github.com/TGP258/CS2_Match_Stats/releases)
+>
+> This project is the Electron desktop version of CS2MatchStats, which requires the original project's plugin to generate match history data.
 
 ---
 
@@ -52,10 +56,6 @@ This app supports automatic scanning of CS2 installation directories and match h
 | Round Details | Click round dots to view kill events for each round |
 | Event Records | Bomb plant/defuse, headshots, weapon information |
 | Side Swap Detection | Auto-detects side swaps and calculates scores correctly |
-| Custom Title Bar | Beautiful custom window title bar |
-| Bilingual Support | Chinese/English interface toggle |
-| Data Persistence | Saves user configuration and selected player |
-| Map Localization | Map names in both Chinese and English |
 
 ---
 
