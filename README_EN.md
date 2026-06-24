@@ -24,6 +24,7 @@
 - [Development Guide](#development-guide)
 - [Build & Release](#build--release)
 - [FAQ](#faq)
+- [Known Issues](#known-issues)
 - [Credits](#credits)
 - [License](#license)
 
@@ -362,6 +363,20 @@ Configure in the `build` field of `package.json`:
 ### Q: How to update the application?
 
 **A:** Download the latest installer and install over the existing version. Configuration data will be preserved.
+
+---
+
+## Known Issues
+
+The following are known issues in the current version that have not yet been resolved:
+
+| Issue | Description |
+|-------|-------------|
+| **MVP calculation bug** | MVP count per match may be inaccurate and may deviate from in-game MVP count |
+| **Assist statistics deviation** | Assist data may not match in-game actual data; some assists may not be properly recorded |
+| **Team kills counted in KD** | Team kills (TK) are currently incorrectly included in kill data, affecting KD and Rating calculations |
+
+These issues are due to limitations in the original data collection and will be gradually fixed in future versions.
 
 ---
 
