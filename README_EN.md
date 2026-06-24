@@ -11,6 +11,7 @@
 ## Table of Contents
 
 - [About](#about)
+- [Screenshots](#screenshots)
 - [Features](#features)
 - [Requirements](#requirements)
 - [Build Requirements](#build-requirements)
@@ -39,6 +40,35 @@ This app supports automatic scanning of CS2 installation directories and match h
 > 📦 **Original Project Releases:** [Download CS2MatchStats Plugin](https://github.com/TGP258/CS2_Match_Stats/releases)
 >
 > This project is the Electron desktop version of CS2MatchStats, which requires the original project's plugin to generate match history data.
+
+---
+
+## Screenshots
+
+### Home - Player Stats & Match List
+
+![Home - Player Stats & Match List](screenshots/home.png)
+
+- Intuitive Rating display with ring chart
+- Data cards showing KDA, ADR, RWS, Headshot Rate, Matches, Win Rate
+- Line chart showing Rating trend over last 10 matches
+- Quick browsing of match history
+
+### Match Detail - Scoreboard & Round Indicators
+
+![Match Detail - Scoreboard & Round Indicators](screenshots/match-detail.png)
+
+- Final score display
+- Complete player statistics scoreboard
+- Round progress indicators, click to view round details
+
+### Round Detail - Event Timeline
+
+![Round Detail - Event Timeline](screenshots/round-detail.png)
+
+- Kill events (with weapon, headshot indicator)
+- Bomb plant/defuse events
+- System time precise to the second
 
 ---
 
