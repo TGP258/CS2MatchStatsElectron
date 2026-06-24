@@ -13,7 +13,7 @@
     "appId": "com.cs2matchstats.app",
     "productName": "CS2 Match Stats",
     "directories": {
-      "output": "release"
+      "output": "../CS2MatchStats-build-20260624-v9"
     },
     "files": [
       "main.js",

@@ -191,7 +191,7 @@ class PathScannerService {
                         timestamp: stat.mtime.toISOString()
                     };
                 })
-                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                .sort((a, b) => b.filename.localeCompare(a.filename));
 
             return files;
         } catch (e) {
@@ -398,16 +398,58 @@ ipcMain.handle('matches:list', async () => {
     
     return files.map(file => {
         const match = matchDataService.loadMatchFromFile(file.filepath);
+        
+        // Get human players with their teams
+        const humanPlayers = [];
+        if (match.Teams?.CT?.Players) {
+            for (const [id, player] of Object.entries(match.Teams.CT.Players)) {
+                if (player.Name && !player.IsBot) {
+                    humanPlayers.push({ name: player.Name, team: 'CT' });
+                }
+            }
+        }
+        if (match.Teams?.T?.Players) {
+            for (const [id, player] of Object.entries(match.Teams.T.Players)) {
+                if (player.Name && !player.IsBot) {
+                    humanPlayers.push({ name: player.Name, team: 'T' });
+                }
+            }
+        }
+        
+        // Calculate correct scores from rounds (like detail page does)
+        const rounds = match?.Rounds || [];
+        let firstSwapIndex = -1;
+        for (let i = 0; i < rounds.length; i++) {
+            if (rounds[i]?.SideSwapped) { firstSwapIndex = i; break; }
+        }
+        if (firstSwapIndex < 0) {
+            for (let i = 0; i < rounds.length; i++) {
+                const rNum = rounds[i]?.RoundNumber || (i + 1);
+                if (rNum === 13) { firstSwapIndex = i; break; }
+            }
+        }
+        let ctScore = 0, tScore = 0;
+        for (let i = 0; i < rounds.length; i++) {
+            const w = rounds[i]?.Winner;
+            if (!w) continue;
+            const swapped = firstSwapIndex >= 0 && i >= firstSwapIndex;
+            const initialSide = swapped ? (w === 'CT' ? 'T' : 'CT') : w;
+            if (initialSide === 'CT') ctScore++;
+            else if (initialSide === 'T') tScore++;
+        }
+
         return {
             filename: file.filename,
             timestamp: file.timestamp,
             mapName: match?.MapName || 'Unknown',
             duration: match?.Duration || 0,
-            roundCount: match?.Rounds?.length || 0,
+            roundCount: rounds.length,
             startTime: match?.StartTime || '',
             botDifficulty: match?.BotDifficulty || 0,
             difficultyLevel: match?.DifficultyLevel || '',
-            weaponDifficulty: match?.WeaponDifficulty || 0
+            ctScore: ctScore,
+            tScore: tScore,
+            humanPlayers: humanPlayers
         };
     });
 });

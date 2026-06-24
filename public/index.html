@@ -447,6 +447,14 @@
     }
 
     .match-info { display: flex; flex-direction: column; gap: 4px; }
+    .match-result {
+      font-size: 20px;
+      font-weight: bold;
+      margin-left: 16px;
+      text-shadow: 0 0 10px currentColor;
+    }
+    .match-card .big-score { font-size: 28px; }
+    .match-card .big-score .sep { font-size: 18px; margin: 0 8px; }
     .match-map { font-size: 16px; font-weight: 600; }
     .match-meta { font-size: 12px; color: var(--text-muted); display: flex; gap: 12px; }
 
@@ -1201,59 +1209,57 @@ const RankSystem = {
     return Math.min(100, Math.max(0, ((exp - currentExp) / (nextExp - currentExp)) * 100));
   },
 
-  getMatchDifficultyLabel(botDiff, weaponDiff) {
-    if (botDiff <= 0) {
-      if (weaponDiff <= 0) return 'C';
-      if (weaponDiff === 1) return 'C+';
-      if (weaponDiff === 2) return 'B';
-      return 'B+';
-    }
-    if (botDiff === 1) {
-      if (weaponDiff <= 0) return 'C+';
-      if (weaponDiff === 1) return 'B';
-      if (weaponDiff === 2) return 'B+';
-      return 'A';
-    }
-    if (botDiff === 2) {
-      if (weaponDiff <= 0) return 'B';
-      if (weaponDiff === 1) return 'B+';
-      if (weaponDiff === 2) return 'A';
-      return 'A+';
-    }
-    if (botDiff === 3) {
-      if (weaponDiff <= 0) return 'B+';
-      if (weaponDiff === 1) return 'A';
-      if (weaponDiff === 2) return 'A+';
-      return 'S';
-    }
-    if (botDiff >= 4 && botDiff <= 5) {
-      if (weaponDiff <= 0) return 'A';
-      if (weaponDiff === 1) return 'A+';
-      if (weaponDiff === 2) return 'S';
-      return 'Pro';
-    }
-    if (botDiff > 5) {
-      if (weaponDiff <= 0) return 'A+';
-      if (weaponDiff === 1) return 'S';
-      return 'Pro';
-    }
-    return 'C';
+  // 获取实际难度（考虑胜负调整）
+  // 玩家输+0.5，玩家赢-0.5
+  getEffectiveDifficulty(botDiff, playerWin) {
+    const diff = Number(botDiff) || 1;
+    if (playerWin === true) return Math.max(0.5, diff - 0.5);
+    if (playerWin === false) return diff + 0.5;
+    return diff;
   },
 
-  getDifficultyMultiplier(botDiff, weaponDiff) {
-    let mult = 1.0;
-    if (botDiff >= 4) mult += 0.5;
-    else if (botDiff >= 3) mult += 0.3;
-    else if (botDiff >= 2) mult += 0.1;
-    else if (botDiff <= 0) mult -= 0.3;
-    mult += weaponDiff * 0.1;
-    return Math.max(0.5, mult);
+  getMatchDifficultyLabel(botDiff, difficultyLevel, playerWin) {
+    const diff = Number(botDiff);
+
+    // 读取不到或为0时，默认C+
+    if (!diff || diff === 0) return 'C+';
+
+    const effectiveDiff = this.getEffectiveDifficulty(diff, playerWin);
+
+    if (effectiveDiff <= 0.5) return 'C';
+    if (effectiveDiff <= 1.0) return 'C+';
+    if (effectiveDiff <= 1.5) return 'B';
+    if (effectiveDiff <= 2.0) return 'B+';
+    if (effectiveDiff <= 2.5) return 'A';
+    if (effectiveDiff <= 3.0) return 'A+';
+    if (effectiveDiff <= 3.5) return 'S';
+    return 'Pro';
   },
 
-  calculateMatchScore(rating, kd, botDiff, weaponDiff) {
+  getDifficultyMultiplier(botDiff, playerWin) {
+    const diff = Number(botDiff) || 1;
+    const effectiveDiff = this.getEffectiveDifficulty(diff, playerWin);
+
+    // 基于有效难度值计算系数
+    let mult;
+    if (effectiveDiff <= 1.0) {
+      mult = 0.8;
+    } else if (effectiveDiff <= 1.5) {
+      mult = 0.8 + (effectiveDiff - 1.0) * 0.4;
+    } else if (effectiveDiff <= 2.0) {
+      mult = 1.0 + (effectiveDiff - 1.5) * 0.2;
+    } else if (effectiveDiff <= 3.0) {
+      mult = 1.1 + (effectiveDiff - 2.0) * 0.4;
+    } else {
+      mult = 1.5 + (effectiveDiff - 3.0) * 0.2;
+    }
+    return Math.max(0.5, Math.min(2.0, mult));
+  },
+
+  calculateMatchScore(rating, kd, botDiff, playerWin) {
     const baseScore = rating * 100;
     const kdBonus = (kd - 1.0) * 30;
-    const diffMult = this.getDifficultyMultiplier(botDiff, weaponDiff);
+    const diffMult = this.getDifficultyMultiplier(botDiff, playerWin);
 
     let diffBonus = 0;
     if (diffMult > 1.0) {
@@ -1298,11 +1304,20 @@ const RankSystem = {
 
       const rating = player.Rating || 1.0;
       const kd = player.Deaths > 0 ? player.Kills / player.Deaths : player.Kills;
-      const botDiff = match.BotDifficulty || 0;
-      const weaponDiff = match.WeaponDifficulty || 0;
+      const botDiff = match.BotDifficulty || 1;
 
-      const score = this.calculateMatchScore(rating, kd, botDiff, weaponDiff);
-      const diffMult = this.getDifficultyMultiplier(botDiff, weaponDiff);
+      // 判断玩家胜负
+      const ctScore = match.Teams?.CT?.Score || 0;
+      const tScore = match.Teams?.T?.Score || 0;
+      let playerWin = null;
+      if (playerTeam === 'CT') {
+        playerWin = ctScore > tScore;
+      } else if (playerTeam === 'T') {
+        playerWin = tScore > ctScore;
+      }
+
+      const score = this.calculateMatchScore(rating, kd, botDiff, playerWin);
+      const diffMult = this.getDifficultyMultiplier(botDiff, playerWin);
       const expGain = Math.round(score * diffMult);
       totalExp += expGain;
 
@@ -1312,7 +1327,7 @@ const RankSystem = {
         kd: kd,
         expGain: expGain,
         botDiff: botDiff,
-        weaponDiff: weaponDiff
+        playerWin: playerWin
       });
     }
 
@@ -1330,14 +1345,13 @@ const RankSystem = {
     };
   },
 
-  getPerformanceLabel(rating, kd, botDiff, weaponDiff) {
+  getPerformanceLabel(rating, kd, botDiff) {
     let perfScore = rating;
     let diffBonus = 0;
-    if (botDiff >= 4) diffBonus = 0.3;
-    else if (botDiff >= 3) diffBonus = 0.2;
-    else if (botDiff >= 2) diffBonus = 0.1;
+    if (botDiff >= 40) diffBonus = 0.3;
+    else if (botDiff >= 30) diffBonus = 0.2;
+    else if (botDiff >= 20) diffBonus = 0.1;
     else if (botDiff <= 0) diffBonus = -0.2;
-    diffBonus += weaponDiff * 0.1;
     perfScore += diffBonus;
 
     if (perfScore >= 1.8) return 'S+';
@@ -1382,6 +1396,7 @@ function calculatePlayerStats(playerName, matches, count = 10) {
     totalAssists: 0,
     totalHeadshots: 0,
     totalDamage: 0,
+    totalRounds: 0,
     totalMVPs: 0,
     wins: 0,
     losses: 0,
@@ -1409,6 +1424,7 @@ function calculatePlayerStats(playerName, matches, count = 10) {
     if (!player) continue;
 
     stats.totalMatches++;
+    stats.totalRounds += match.Rounds?.length || 0;
     stats.totalKills += player.Kills || 0;
     stats.totalDeaths += player.Deaths || 0;
     stats.totalAssists += player.Assists || 0;
@@ -1443,7 +1459,7 @@ function calculatePlayerStats(playerName, matches, count = 10) {
     const totalGames = stats.wins + stats.losses + stats.draws;
     stats.winRate = totalGames > 0 ? ((stats.wins / totalGames) * 100).toFixed(1) : 0;
     stats.hsRate = stats.totalKills > 0 ? Math.round((stats.totalHeadshots / stats.totalKills) * 100) : 0;
-    stats.adr = stats.totalMatches > 0 ? Math.round(stats.totalDamage / stats.totalMatches) : 0;
+    stats.adr = stats.totalRounds > 0 ? Math.round(stats.totalDamage / stats.totalRounds) : 0;
     stats.avgRws = stats.totalMatches > 0 ? (stats.rws / stats.totalMatches).toFixed(1) : '0.0';
   }
 
@@ -1764,8 +1780,28 @@ function renderMatchList() {
       const totalRounds = summary.roundCount || 0;
       const map = getMapName(summary.mapName);
       const date = formatDateTime(summary.startTime || summary.timestamp || '');
-      const diffLabel = RankSystem.getMatchDifficultyLabel(summary.botDifficulty || 0, summary.weaponDifficulty || 0);
+
+      // Determine win/loss for current player
+      const playerName = state.selectedPlayer;
+      const playerTeam = summary.humanPlayers?.find(p => p.name === playerName)?.team;
+      const ctScore = summary.ctScore || 0;
+      const tScore = summary.tScore || 0;
+      let playerWin = null;
+      if (playerTeam === 'CT') {
+        playerWin = ctScore > tScore;
+      } else if (playerTeam === 'T') {
+        playerWin = tScore > ctScore;
+      }
+      const diffLabel = RankSystem.getMatchDifficultyLabel(summary.botDifficulty, summary.difficultyLevel, playerWin);
       const diffColor = RankSystem.rankColors[diffLabel] || '#888';
+
+      let result = '';
+      if (playerTeam === 'CT') {
+        result = ctScore > tScore ? '胜' : ctScore < tScore ? '败' : '平';
+      } else if (playerTeam === 'T') {
+        result = tScore > ctScore ? '胜' : tScore < ctScore ? '败' : '平';
+      }
+      const resultColor = result === '胜' ? '#4caf50' : result === '败' ? '#f44336' : '#888';
 
       return `
         <div class="match-card" onclick="openMatch(${idx})">
@@ -1777,6 +1813,12 @@ function renderMatchList() {
               <span class="match-diff-badge" style="color:${diffColor}; border-color:${diffColor};">${diffLabel} ${_('difficulty')}</span>
             </div>
           </div>
+          <div class="big-score">
+             <span class="ct">${ctScore}</span>
+             <span class="sep">:</span>
+             <span class="t">${tScore}</span>
+           </div>
+          ${result ? `<div class="match-result" style="color:${resultColor};">${result}</div>` : ''}
         </div>
       `;
     }).join('')}
@@ -1830,6 +1872,17 @@ function renderMatchDetail(match) {
     const initialSide = swapped ? (w === 'CT' ? 'T' : 'CT') : w;
     if (initialSide === 'CT') ctScore++;
     else if (initialSide === 'T') tScore++;
+  }
+
+  // 判断当前玩家胜负
+  const playerName = state.selectedPlayer;
+  const playerOnCT = ctPlayers.some(p => p.Name?.toLowerCase() === playerName?.toLowerCase());
+  const playerOnT = tPlayers.some(p => p.Name?.toLowerCase() === playerName?.toLowerCase());
+  let playerWin = null;
+  if (playerOnCT) {
+    playerWin = ctScore > tScore;
+  } else if (playerOnT) {
+    playerWin = tScore > ctScore;
   }
 
   const renderPlayerRow = (p) => {
@@ -1892,11 +1945,11 @@ function renderMatchDetail(match) {
           ${getMapName(match.MapName)} · ${rounds.length} ${_('rounds')} · ${formatDateTime(match.StartTime || '')}
         </div>
         <div class="match-difficulty-row">
-          <span class="diff-badge" style="border-color:${RankSystem.rankColors[RankSystem.getMatchDifficultyLabel(match.BotDifficulty, match.WeaponDifficulty)] || '#888'}; color:${RankSystem.rankColors[RankSystem.getMatchDifficultyLabel(match.BotDifficulty, match.WeaponDifficulty)] || '#888'};">
-            ${RankSystem.getMatchDifficultyLabel(match.BotDifficulty || 0, match.WeaponDifficulty || 0)} ${_('difficulty')}
+          <span class="diff-badge" style="border-color:${RankSystem.rankColors[RankSystem.getMatchDifficultyLabel(match.BotDifficulty, match.DifficultyLevel, playerWin)] || '#888'}; color:${RankSystem.rankColors[RankSystem.getMatchDifficultyLabel(match.BotDifficulty, match.DifficultyLevel, playerWin)] || '#888'};">
+            ${RankSystem.getMatchDifficultyLabel(match.BotDifficulty, match.DifficultyLevel, playerWin)} ${_('difficulty')}
           </span>
           <span style="color:var(--text-muted); font-size:11px;">
-            ${_('botDifficulty')}: ${match.BotDifficulty || 0} | ${_('weaponDifficulty')}: ${match.WeaponDifficulty || 0}
+            ${_('botDifficulty')}: ${match.BotDifficulty || 1}
           </span>
         </div>
       </div>
