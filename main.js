@@ -404,7 +404,10 @@ ipcMain.handle('matches:list', async () => {
             mapName: match?.MapName || 'Unknown',
             duration: match?.Duration || 0,
             roundCount: match?.Rounds?.length || 0,
-            startTime: match?.StartTime || ''
+            startTime: match?.StartTime || '',
+            botDifficulty: match?.BotDifficulty || 0,
+            difficultyLevel: match?.DifficultyLevel || '',
+            weaponDifficulty: match?.WeaponDifficulty || 0
         };
     });
 });
