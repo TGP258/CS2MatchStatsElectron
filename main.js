@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -17,7 +17,6 @@ class PathScannerService {
         const platform = process.platform;
         
         if (platform === 'win32') {
-            // Check A-Z drives on Windows
             for (let letter = 65; letter <= 90; letter++) {
                 const drivePath = letter + ':\\';
                 try {
@@ -28,7 +27,6 @@ class PathScannerService {
                         }
                     }
                 } catch (e) {
-                    // Drive not accessible
                 }
             }
         }
@@ -37,7 +35,6 @@ class PathScannerService {
     }
 
     scanSteamPath() {
-        // Check user custom paths first
         if (this.steamPath && fs.existsSync(this.steamPath)) {
             return true;
         }
@@ -399,24 +396,30 @@ ipcMain.handle('matches:list', async () => {
     return files.map(file => {
         const match = matchDataService.loadMatchFromFile(file.filepath);
         
-        // Get human players with their teams
         const humanPlayers = [];
         if (match.Teams?.CT?.Players) {
             for (const [id, player] of Object.entries(match.Teams.CT.Players)) {
                 if (player.Name && !player.IsBot) {
-                    humanPlayers.push({ name: player.Name, team: 'CT' });
+                    humanPlayers.push({
+                      name: player.Name, team: 'CT',
+                      rating: player.Rating || 1.0,
+                      kd: player.Deaths > 0 ? +(player.Kills / player.Deaths).toFixed(2) : (player.Kills || 0)
+                    });
                 }
             }
         }
         if (match.Teams?.T?.Players) {
             for (const [id, player] of Object.entries(match.Teams.T.Players)) {
                 if (player.Name && !player.IsBot) {
-                    humanPlayers.push({ name: player.Name, team: 'T' });
+                    humanPlayers.push({
+                      name: player.Name, team: 'T',
+                      rating: player.Rating || 1.0,
+                      kd: player.Deaths > 0 ? +(player.Kills / player.Deaths).toFixed(2) : (player.Kills || 0)
+                    });
                 }
             }
         }
         
-        // Calculate correct scores from rounds (like detail page does)
         const rounds = match?.Rounds || [];
         let firstSwapIndex = -1;
         for (let i = 0; i < rounds.length; i++) {
@@ -512,3 +515,6 @@ ipcMain.handle('window:close', () => {
 ipcMain.handle('window:isMaximized', () => {
     return mainWindow ? mainWindow.isMaximized() : false;
 });
+
+// Shell
+ipcMain.handle('shell:openExternal', (_, url) => shell.openExternal(url));

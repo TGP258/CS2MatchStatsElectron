@@ -447,6 +447,28 @@
     }
 
     .match-info { display: flex; flex-direction: column; gap: 4px; }
+    .match-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .match-exp {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      opacity: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .exp-icon {
+      font-size: 11px;
+      line-height: 1;
+    }
     .match-result {
       font-size: 20px;
       font-weight: bold;
@@ -984,12 +1006,122 @@
       font-family: 'JetBrains Mono', monospace;
       margin-bottom: 4px;
     }
+    .rank-badge-inline {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-right: 6px;
+      vertical-align: middle;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .player-name-link {
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .player-name-link:hover {
+      color: var(--accent-light) !important;
+    }
     .match-difficulty-row {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 4px;
       margin-top: 6px;
+    }
+
+    /* About Page */
+    .about-section {
+      display: flex;
+      justify-content: center;
+      padding: 20px 0;
+    }
+    .about-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: var(--shadow-card), var(--shadow-inner);
+    }
+    .about-logo {
+      width: 72px;
+      height: 72px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3);
+    }
+    .about-name {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+    .about-version {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      color: var(--accent-light);
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    .about-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+    .about-links {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .about-link-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      text-decoration: none;
+      color: var(--text-secondary);
+      font-size: 13px;
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+    .about-link-item:hover {
+      border-color: var(--border-strong);
+      color: var(--accent-light);
+      background: var(--accent-soft);
+    }
+    .about-link-label {
+      font-weight: 500;
+      color: var(--text-muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .about-link-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text-primary);
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .about-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+    .about-footer {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 20px;
     }
   </style>
 </head>
@@ -1126,7 +1258,10 @@ const i18n = {
     currentRank: 'Current Rank', nextRank: 'Next Rank',
     difficulty: 'Difficulty', botDifficulty: 'Bot Difficulty',
     weaponDifficulty: 'Weapon Difficulty', matchRank: 'Match Grade',
-    experience: 'EXP', performance: 'Performance'
+    experience: 'EXP', performance: 'Performance',
+    about: 'About', version: 'Version', repository: 'Repository',
+    homepage: 'Homepage', aboutTitle: 'About CS2 Match Stats',
+    aboutDesc: 'CS2 Match Stats is an Electron desktop application for viewing Counter-Strike 2 match statistics.'
   },
   zh: {
     appTitle: 'CS2 对局数据', matches: '对局列表', refresh: '刷新',
@@ -1151,7 +1286,10 @@ const i18n = {
     currentRank: '当前段位', nextRank: '下一段位',
     difficulty: '对局难度', botDifficulty: 'BOT难度',
     weaponDifficulty: '武器难度', matchRank: '对局评级',
-    experience: '经验值', performance: '表现评价'
+    experience: '经验值', performance: '表现评价',
+    about: '关于', version: '版本', repository: '仓库地址',
+    homepage: '作者主页', aboutTitle: '关于 CS2 Match Stats',
+    aboutDesc: 'CS2 Match Stats 是一款用于查看 Counter-Strike 2 对局数据的 Electron 桌面应用。'
   }
 };
 
@@ -1174,9 +1312,9 @@ const RankSystem = {
     'S': '#FF9800', 'Pro': '#FFD700'
   },
   rankThresholds: {
-    'D': 0, 'D+': 100, 'C': 250, 'C+': 450,
-    'B': 700, 'B+': 1000, 'A': 1400, 'A+': 1900,
-    'S': 2500, 'Pro': 3200
+    'D': 0, 'D+': 80, 'C': 200, 'C+': 360,
+    'B': 560, 'B+': 800, 'A': 1120, 'A+': 1500,
+    'S': 2000, 'Pro': 2600
   },
 
   getRankFromExp(exp) {
@@ -1201,6 +1339,30 @@ const RankSystem = {
     return this.rankThresholds[rank] || 0;
   },
 
+  getRankIndex(rank) {
+    const idx = this.ranks.indexOf(rank);
+    return idx < 0 ? 0 : idx;
+  },
+
+  // 段位差倍率表：行=胜/负，列=对局段位 - 玩家段位
+  // 例如 A玩家(idx=6) 打 C+局(idx=2)，差值=-4 → 胜+0.10 / 负-0.15
+  getRankDiffMultiplier(playerRank, matchRank, playerWin) {
+    const pIdx = this.getRankIndex(playerRank);
+    const mIdx = this.getRankIndex(matchRank);
+    const diff = mIdx - pIdx;
+    const clampedDiff = Math.max(-4, Math.min(4, diff));
+    const key = String(clampedDiff);
+
+    // 胜局倍率：低段位打高段位爆奖，高段位打低段位极少
+    const winMults = { '-4': 0.10, '-3': 0.25, '-2': 0.50, '-1': 0.75, '0': 1.00, '1': 1.50, '2': 2.00, '3': 2.50, '4': 2.80 };
+    // 负局倍率：高段位打低段位输了重罚，低段位打高段位输了轻罚
+    const lossMults = { '-4': 0.15, '-3': 0.25, '-2': 0.40, '-1': 0.70, '0': 1.00, '1': 1.40, '2': 1.80, '3': 2.30, '4': 2.80 };
+
+    if (playerWin === true) return winMults[key] || 1.0;
+    if (playerWin === false) return lossMults[key] || 1.0;
+    return 1.0;
+  },
+
   getRankProgress(exp, currentRank) {
     const nextRank = this.getNextRank(currentRank);
     const currentExp = this.getExpForRank(currentRank);
@@ -1209,22 +1371,35 @@ const RankSystem = {
     return Math.min(100, Math.max(0, ((exp - currentExp) / (nextExp - currentExp)) * 100));
   },
 
-  // 获取实际难度（考虑胜负调整）
-  // 玩家输+0.5，玩家赢-0.5
-  getEffectiveDifficulty(botDiff, playerWin) {
+  getEffectiveDifficulty(botDiff, playerWin, scoreDiff = 0) {
     const diff = Number(botDiff) || 1;
-    if (playerWin === true) return Math.max(0.5, diff - 0.5);
-    if (playerWin === false) return diff + 0.5;
-    return diff;
+    if (playerWin === undefined || playerWin === null) return diff;
+
+    const absDiff = Math.abs(scoreDiff || 0);
+
+    if (playerWin === true) {
+      if (absDiff <= 1) return diff;
+      if (absDiff === 2) return Math.max(0.5, diff - 0.1);
+      if (absDiff === 3) return Math.max(0.5, diff - 0.2);
+      if (absDiff === 4) return Math.max(0.5, diff - 0.3);
+      if (absDiff === 5) return Math.max(0.5, diff - 0.4);
+      return Math.max(0.5, diff - 0.5);
+    } else {
+      if (absDiff <= 1) return diff;
+      if (absDiff === 2) return diff + 0.1;
+      if (absDiff === 3) return diff + 0.2;
+      if (absDiff === 4) return diff + 0.3;
+      if (absDiff === 5) return diff + 0.4;
+      return diff + 0.5;
+    }
   },
 
-  getMatchDifficultyLabel(botDiff, difficultyLevel, playerWin) {
+  getMatchDifficultyLabel(botDiff, difficultyLevel, playerWin, scoreDiff = 0) {
     const diff = Number(botDiff);
 
-    // 读取不到或为0时，默认C+
     if (!diff || diff === 0) return 'C+';
 
-    const effectiveDiff = this.getEffectiveDifficulty(diff, playerWin);
+    const effectiveDiff = this.getEffectiveDifficulty(diff, playerWin, scoreDiff);
 
     if (effectiveDiff <= 0.5) return 'C';
     if (effectiveDiff <= 1.0) return 'C+';
@@ -1236,56 +1411,44 @@ const RankSystem = {
     return 'Pro';
   },
 
-  getDifficultyMultiplier(botDiff, playerWin) {
-    const diff = Number(botDiff) || 1;
-    const effectiveDiff = this.getEffectiveDifficulty(diff, playerWin);
+  calculateMatchScore(rating, kd, botDiff, playerWin, scoreDiff = 0, playerRank = 'C+', matchRank = 'C+') {
+    const absDiff = Math.abs(scoreDiff || 0);
+    const BASE = 60;
 
-    // 基于有效难度值计算系数
-    let mult;
-    if (effectiveDiff <= 1.0) {
-      mult = 0.8;
-    } else if (effectiveDiff <= 1.5) {
-      mult = 0.8 + (effectiveDiff - 1.0) * 0.4;
-    } else if (effectiveDiff <= 2.0) {
-      mult = 1.0 + (effectiveDiff - 1.5) * 0.2;
-    } else if (effectiveDiff <= 3.0) {
-      mult = 1.1 + (effectiveDiff - 2.0) * 0.4;
+    let baseClose;
+    if (absDiff <= 2) baseClose = 1.0;
+    else if (absDiff <= 3) baseClose = 0.95;
+    else if (absDiff <= 4) baseClose = 0.85;
+    else if (absDiff <= 5) baseClose = 0.75;
+    else if (absDiff <= 6) baseClose = 0.65;
+    else baseClose = Math.max(0.3, 1.0 - (absDiff - 2) * 0.07);
+
+    const effectiveDiff = this.getEffectiveDifficulty(botDiff, playerWin, absDiff);
+    const cappedDiff = Math.min(effectiveDiff, 5.0);
+
+    // 表现分：Rating 1.0=0，1.5=+15，2.0=+30，2.5=+45
+    const perfBonus = (rating - 1.0) * 30;
+
+    // 段位差倍率（核心机制）
+    const rankMult = this.getRankDiffMultiplier(playerRank, matchRank, playerWin);
+
+    if (playerWin) {
+      const winClose = Math.min(1.0, 1.0 - baseClose * 0.65 + 0.35);
+      const baseGain = BASE * winClose * (0.5 + cappedDiff * 0.5) + perfBonus;
+      const gain = baseGain * rankMult;
+      return Math.max(1, Math.round(gain));
     } else {
-      mult = 1.5 + (effectiveDiff - 3.0) * 0.2;
+      // 负局：只扣基础分，perfBonus 不加（避免高Rating输赢通吃）
+      const baseLoss = BASE * baseClose * (0.8 + cappedDiff * 0.4);
+      const loss = -baseLoss * rankMult;
+      return Math.min(-1, Math.round(loss));
     }
-    return Math.max(0.5, Math.min(2.0, mult));
-  },
-
-  calculateMatchScore(rating, kd, botDiff, playerWin) {
-    const baseScore = rating * 100;
-    const kdBonus = (kd - 1.0) * 30;
-    const diffMult = this.getDifficultyMultiplier(botDiff, playerWin);
-
-    let diffBonus = 0;
-    if (diffMult > 1.0) {
-      if (rating >= 1.0) {
-        diffBonus = (rating - 1.0) * 50 * (diffMult - 1.0);
-      } else {
-        diffBonus = (rating - 1.0) * 25 * (diffMult - 1.0);
-      }
-    } else {
-      if (rating > 1.0) {
-        diffBonus = (rating - 1.0) * 30;
-      } else {
-        diffBonus = (rating - 1.0) * 60;
-      }
-    }
-
-    const total = baseScore + kdBonus + diffBonus;
-    return Math.max(total, -50);
   },
 
   calculatePlayerRank(playerName, matches, count = 10) {
-    let totalExp = 500; // Starting exp
-    const recentMatches = [];
+    const allPlayerMatches = [];
 
-    for (let i = 0; i < Math.min(count, matches.length); i++) {
-      const match = matches[i];
+    for (const match of matches) {
       let player = null;
       let playerTeam = null;
 
@@ -1306,9 +1469,26 @@ const RankSystem = {
       const kd = player.Deaths > 0 ? player.Kills / player.Deaths : player.Kills;
       const botDiff = match.BotDifficulty || 1;
 
-      // 判断玩家胜负
-      const ctScore = match.Teams?.CT?.Score || 0;
-      const tScore = match.Teams?.T?.Score || 0;
+      const rounds = match.Rounds || [];
+      let firstSwapIndex = -1;
+      for (let j = 0; j < rounds.length; j++) {
+        if (rounds[j]?.SideSwapped) { firstSwapIndex = j; break; }
+      }
+      if (firstSwapIndex < 0) {
+        for (let j = 0; j < rounds.length; j++) {
+          if ((rounds[j]?.RoundNumber || (j + 1)) === 13) { firstSwapIndex = j; break; }
+        }
+      }
+      let ctScore = 0, tScore = 0;
+      for (let j = 0; j < rounds.length; j++) {
+        const w = rounds[j]?.Winner;
+        if (!w) continue;
+        const swapped = firstSwapIndex >= 0 && j >= firstSwapIndex;
+        const initialSide = swapped ? (w === 'CT' ? 'T' : 'CT') : w;
+        if (initialSide === 'CT') ctScore++;
+        else if (initialSide === 'T') tScore++;
+      }
+
       let playerWin = null;
       if (playerTeam === 'CT') {
         playerWin = ctScore > tScore;
@@ -1316,24 +1496,78 @@ const RankSystem = {
         playerWin = tScore > ctScore;
       }
 
-      const score = this.calculateMatchScore(rating, kd, botDiff, playerWin);
-      const diffMult = this.getDifficultyMultiplier(botDiff, playerWin);
-      const expGain = Math.round(score * diffMult);
-      totalExp += expGain;
+      const scoreDiff = Math.abs(ctScore - tScore);
+      const matchRank = this.getMatchDifficultyLabel(botDiff, null, playerWin === null ? null : !playerWin, scoreDiff);
 
-      recentMatches.push({
+      allPlayerMatches.push({
         match: match,
         rating: rating,
         kd: kd,
-        expGain: expGain,
         botDiff: botDiff,
-        playerWin: playerWin
+        playerWin: playerWin,
+        scoreDiff: scoreDiff,
+        matchRank: matchRank,
+        expGain: 0  // 后面迭代计算
       });
     }
 
-    const currentRank = this.getRankFromExp(totalExp);
-    const nextRank = this.getNextRank(currentRank);
-    const progress = this.getRankProgress(totalExp, currentRank);
+    const totalMatchesCount = allPlayerMatches.length;
+    if (totalMatchesCount === 0) {
+      return {
+        totalExp: 500, currentRank: 'D', nextRank: 'D+', progress: 0,
+        recentMatches: [], rankColor: '#888'
+      };
+    }
+
+    // 迭代式计算EXP：每场对局使用当时的玩家段位
+    let runningExp = 500;
+    let runningRank = this.getRankFromExp(runningExp);
+    for (const m of allPlayerMatches) {
+      const expGain = this.calculateMatchScore(
+        m.rating, m.kd, m.botDiff, m.playerWin, m.scoreDiff,
+        runningRank, m.matchRank
+      );
+      m.expGain = expGain;
+      runningExp += expGain;
+      runningRank = this.getRankFromExp(runningExp);
+    }
+
+    const recentList = allPlayerMatches.slice(Math.max(0, totalMatchesCount - count));
+
+    let allExp = 500;
+    for (const m of allPlayerMatches) { allExp += m.expGain; }
+
+    let recentExp = 500;
+    for (const m of recentList) { recentExp += m.expGain; }
+
+    let totalExp = recentExp * 0.7 + allExp * 0.3;
+
+    let currentRank, nextRank, progress, rankColor;
+
+    if (totalMatchesCount === 1) {
+      const m = allPlayerMatches[0];
+      const botWin = m.playerWin === null ? null : !m.playerWin;
+      const fittedLabel = this.getMatchDifficultyLabel(m.botDiff, null, botWin, m.scoreDiff);
+      currentRank = fittedLabel + '?';
+      nextRank = fittedLabel + '?';
+      progress = 100;
+      rankColor = this.rankColors[fittedLabel] || '#888';
+    } else {
+      currentRank = this.getRankFromExp(totalExp);
+      nextRank = this.getNextRank(currentRank);
+      progress = this.getRankProgress(totalExp, currentRank);
+      rankColor = this.rankColors[currentRank] || '#888';
+    }
+
+    const recentMatches = recentList.map(m => ({
+      match: m.match,
+      rating: m.rating,
+      kd: m.kd,
+      expGain: m.expGain,
+      botDiff: m.botDiff,
+      playerWin: m.playerWin,
+      scoreDiff: m.scoreDiff
+    }));
 
     return {
       totalExp: totalExp,
@@ -1341,7 +1575,7 @@ const RankSystem = {
       nextRank: nextRank,
       progress: progress,
       recentMatches: recentMatches,
-      rankColor: this.rankColors[currentRank] || '#888'
+      rankColor: rankColor
     };
   },
 
@@ -1385,28 +1619,11 @@ function formatSecondsToMinSec(seconds) {
   return `${m}:${String(sec).padStart(2, '0')}`;
 }
 
-// Calculate player stats from last N matches
+// Calculate player stats from all matches, display stats from last N
 function calculatePlayerStats(playerName, matches, count = 10) {
-  const recentMatches = matches.slice(0, count);
-  const stats = {
-    playerName: playerName,
-    totalMatches: 0,
-    totalKills: 0,
-    totalDeaths: 0,
-    totalAssists: 0,
-    totalHeadshots: 0,
-    totalDamage: 0,
-    totalRounds: 0,
-    totalMVPs: 0,
-    wins: 0,
-    losses: 0,
-    draws: 0,
-    avgRating: 0,
-    ratings: [],
-    rws: 0
-  };
+  const allPlayerMatches = [];
 
-  for (const match of recentMatches) {
+  for (const match of matches) {
     let player = null;
     let playerTeam = null;
 
@@ -1423,7 +1640,31 @@ function calculatePlayerStats(playerName, matches, count = 10) {
 
     if (!player) continue;
 
-    stats.totalMatches++;
+    allPlayerMatches.push({ match, player, playerTeam });
+  }
+
+  const totalAllMatches = allPlayerMatches.length;
+  const recentList = allPlayerMatches.slice(Math.max(0, totalAllMatches - count));
+
+  const stats = {
+    playerName: playerName,
+    totalMatches: totalAllMatches,
+    totalKills: 0,
+    totalDeaths: 0,
+    totalAssists: 0,
+    totalHeadshots: 0,
+    totalDamage: 0,
+    totalRounds: 0,
+    totalMVPs: 0,
+    wins: 0,
+    losses: 0,
+    draws: 0,
+    avgRating: 0,
+    ratings: [],
+    rws: 0
+  };
+
+  for (const { match, player, playerTeam } of recentList) {
     stats.totalRounds += match.Rounds?.length || 0;
     stats.totalKills += player.Kills || 0;
     stats.totalDeaths += player.Deaths || 0;
@@ -1448,10 +1689,11 @@ function calculatePlayerStats(playerName, matches, count = 10) {
     }
   }
 
-  if (stats.totalMatches > 0) {
-    stats.avgKills = (stats.totalKills / stats.totalMatches).toFixed(1);
-    stats.avgDeaths = (stats.totalDeaths / stats.totalMatches).toFixed(1);
-    stats.avgAssists = (stats.totalAssists / stats.totalMatches).toFixed(1);
+  const recentCount = recentList.length;
+  if (recentCount > 0) {
+    stats.avgKills = (stats.totalKills / recentCount).toFixed(1);
+    stats.avgDeaths = (stats.totalDeaths / recentCount).toFixed(1);
+    stats.avgAssists = (stats.totalAssists / recentCount).toFixed(1);
     stats.avgRating = (stats.ratings.reduce((a, b) => a + b, 0) / stats.ratings.length).toFixed(2);
     stats.kda = stats.totalDeaths > 0 
       ? ((stats.totalKills + stats.totalAssists) / stats.totalDeaths).toFixed(2)
@@ -1460,7 +1702,7 @@ function calculatePlayerStats(playerName, matches, count = 10) {
     stats.winRate = totalGames > 0 ? ((stats.wins / totalGames) * 100).toFixed(1) : 0;
     stats.hsRate = stats.totalKills > 0 ? Math.round((stats.totalHeadshots / stats.totalKills) * 100) : 0;
     stats.adr = stats.totalRounds > 0 ? Math.round(stats.totalDamage / stats.totalRounds) : 0;
-    stats.avgRws = stats.totalMatches > 0 ? (stats.rws / stats.totalMatches).toFixed(1) : '0.0';
+    stats.avgRws = recentCount > 0 ? (stats.rws / recentCount).toFixed(1) : '0.0';
   }
 
   return stats;
@@ -1496,7 +1738,7 @@ function renderRingChart(rating) {
   
   return `
     <div class="ring-chart-container">
-      <svg width="140" height="140" viewBox="0 0 140 140">
+      <svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140">
         <circle cx="70" cy="70" r="${r}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="${strokeWidth}"/>
         <circle cx="70" cy="70" r="${r}" fill="none" stroke="${color}" stroke-width="${strokeWidth}"
           stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
@@ -1549,30 +1791,22 @@ function renderRatingTrendChart(ratings) {
     gridLines.push({ y, val: val.toFixed(1) });
   }
 
+  const LINE_COLOR = '#a78bfa';
+  const AREA_COLOR = 'rgba(124, 58, 237, 0.15)';
+
   return `
-    <svg viewBox="0 0 ${width} ${height}" width="100%" height="100%" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stop-color="rgba(124, 58, 237, 0.4)"/>
-          <stop offset="100%" stop-color="rgba(124, 58, 237, 0)"/>
-        </linearGradient>
-        <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#a78bfa"/>
-          <stop offset="100%" stop-color="#7c3aed"/>
-        </linearGradient>
-      </defs>
-      
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="display:block;">
       ${gridLines.map(g => `
         <line x1="${padding.left}" y1="${g.y}" x2="${width - padding.right}" y2="${g.y}"
           stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
         <text x="4" y="${g.y + 4}" fill="rgba(107,114,128,0.6)" font-size="10" font-family="JetBrains Mono">${g.val}</text>
       `).join('')}
       
-      <path d="${areaD}" fill="url(#areaGradient)"/>
-      <path d="${pathD}" fill="none" stroke="url(#lineGradient)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="${areaD}" fill="${AREA_COLOR}" stroke="none"/>
+      <path d="${pathD}" fill="none" stroke="${LINE_COLOR}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
       
       ${points.map(p => `
-        <circle cx="${p.x}" cy="${p.y}" r="4" fill="#0b0e14" stroke="url(#lineGradient)" stroke-width="2"/>
+        <circle cx="${p.x}" cy="${p.y}" r="4" fill="#0b0e14" stroke="${LINE_COLOR}" stroke-width="2"/>
         <title>${p.r.toFixed(2)}</title>
       `).join('')}
     </svg>
@@ -1587,15 +1821,19 @@ function render() {
   
   if (state.currentView === 'settings') {
     content += renderSettings();
+  } else if (state.currentView === 'about') {
+    content += renderAbout();
   } else if (state.currentView === 'match' && state.currentMatch) {
     content += renderMatchDetail(state.currentMatch);
   } else {
     content += renderUserStats();
     content += renderMatchList();
   }
-  
-  content += renderFooter();
-  
+
+  if (state.currentView !== 'about') {
+    content += renderFooter();
+  }
+
   if (state.currentView === 'match') {
     content += renderRoundDetailModal();
   }
@@ -1628,7 +1866,8 @@ function renderHeader() {
           <button class="lang-btn ${state.lang==='en'?'active':''}" onclick="setLang('en')">EN</button>
         </div>
         <button class="settings-btn" onclick="showSettings()">⚙ ${_('settings')}</button>
-        ${state.currentView === 'match'
+        <button class="settings-btn" onclick="showAbout()">ℹ ${_('about')}</button>
+        ${state.currentView === 'match' || state.currentView === 'about'
           ? `<button class="back-btn" onclick="backToMain()">← ${_('back')}</button>`
           : `<button class="refresh-btn" onclick="loadData()">↻ ${_('refresh')}</button>`
         }
@@ -1689,17 +1928,37 @@ function renderUserStats() {
             </div>
             
             <div class="stats-grid-section">
-              <div class="rank-progress-section">
-                <div class="rank-progress-header">
-                  <span class="rank-current" style="color:${rankInfo.rankColor};">${rankInfo.currentRank}</span>
-                  <span class="rank-exp">${Math.round(rankInfo.totalExp)} EXP</span>
-                  <span class="rank-next">${rankInfo.nextRank}</span>
-                </div>
-                <div class="rank-progress-bar">
-                  <div class="rank-progress-fill" style="width:${rankInfo.progress}%; background:linear-gradient(90deg, ${rankInfo.rankColor}, #a78bfa);"></div>
-                </div>
-                <div class="rank-progress-label">${Math.round(rankInfo.progress)}% ${_('rankProgress')}</div>
-              </div>
+              ${(() => {
+                const curExp = Math.round(rankInfo.totalExp);
+                const curRankExp = RankSystem.rankThresholds[rankInfo.currentRank] || 0;
+                const nextRankExp = RankSystem.rankThresholds[rankInfo.nextRank] || curRankExp + 1;
+                const earned = curExp - curRankExp;
+                const needed = nextRankExp - curRankExp;
+                const remain = nextRankExp - curExp;
+                const isSingleMatch = rankInfo.currentRank.includes('?');
+                if (isSingleMatch) {
+                  return `<div class="rank-progress-section">
+                    <div class="rank-progress-header">
+                      <span class="rank-current" style="color:${rankInfo.rankColor};">${rankInfo.currentRank}</span>
+                    </div>
+                    <div class="rank-progress-bar">
+                      <div class="rank-progress-fill" style="width:100%; background:${rankInfo.rankColor};"></div>
+                    </div>
+                    <div class="rank-progress-label">${_('rankProgress')}</div>
+                  </div>`;
+                }
+                return `<div class="rank-progress-section">
+                  <div class="rank-progress-header">
+                    <span class="rank-current" style="color:${rankInfo.rankColor};">${rankInfo.currentRank}</span>
+                    <span class="rank-exp">${earned}/${needed} EXP</span>
+                    <span class="rank-next">${rankInfo.nextRank}</span>
+                  </div>
+                  <div class="rank-progress-bar">
+                    <div class="rank-progress-fill" style="width:${rankInfo.progress}%; background:linear-gradient(90deg, ${rankInfo.rankColor}, #a78bfa);"></div>
+                  </div>
+                  <div class="rank-progress-label">${Math.round(rankInfo.progress)}% · 还需 ${remain} EXP</div>
+                </div>`;
+              })()}
               <div class="stats-grid">
                 <div class="stat-item">
                   <div class="stat-value ${kdaClass}">${stats.kda || '0.00'}</div>
@@ -1737,7 +1996,7 @@ function renderUserStats() {
           <div class="rating-trend-section">
             <div class="rating-trend-title">${_('ratingTrend')}</div>
             <div class="rating-chart-container">
-              ${renderRatingTrendChart(stats.ratings.slice().reverse())}
+              ${renderRatingTrendChart(stats.ratings.slice())}
             </div>
           </div>
         </div>
@@ -1781,9 +2040,9 @@ function renderMatchList() {
       const map = getMapName(summary.mapName);
       const date = formatDateTime(summary.startTime || summary.timestamp || '');
 
-      // Determine win/loss for current player
       const playerName = state.selectedPlayer;
       const playerTeam = summary.humanPlayers?.find(p => p.name === playerName)?.team;
+      if (playerName && !playerTeam) return '';
       const ctScore = summary.ctScore || 0;
       const tScore = summary.tScore || 0;
       let playerWin = null;
@@ -1792,7 +2051,8 @@ function renderMatchList() {
       } else if (playerTeam === 'T') {
         playerWin = tScore > ctScore;
       }
-      const diffLabel = RankSystem.getMatchDifficultyLabel(summary.botDifficulty, summary.difficultyLevel, playerWin);
+      const scoreDiffMatch = Math.abs(ctScore - tScore);
+      const diffLabel = RankSystem.getMatchDifficultyLabel(summary.botDifficulty, summary.difficultyLevel, playerWin, scoreDiffMatch);
       const diffColor = RankSystem.rankColors[diffLabel] || '#888';
 
       let result = '';
@@ -1802,6 +2062,18 @@ function renderMatchList() {
         result = tScore > ctScore ? '胜' : tScore < ctScore ? '败' : '平';
       }
       const resultColor = result === '胜' ? '#4caf50' : result === '败' ? '#f44336' : '#888';
+
+      const pSummary = summary.humanPlayers?.find(p => p.name === playerName);
+      const pRating = pSummary?.rating || 1.0;
+      const pKd = pSummary?.kd || 0;
+      let expGain = null;
+      if (playerWin !== null && playerName) {
+        const matchLabel = RankSystem.getMatchDifficultyLabel(summary.botDifficulty, summary.difficultyLevel, playerWin, scoreDiffMatch);
+        expGain = RankSystem.calculateMatchScore(pRating, pKd, summary.botDifficulty || 1, playerWin, scoreDiffMatch, 'C+', matchLabel);
+      }
+      const expColor = expGain > 0 ? '#22c55e' : expGain < 0 ? '#ef4444' : '#94a3b8';
+      const expSign = expGain > 0 ? '+' : '';
+      const expLabel = expGain === null ? '' : `${expSign}${expGain} EXP`;
 
       return `
         <div class="match-card" onclick="openMatch(${idx})">
@@ -1813,11 +2085,14 @@ function renderMatchList() {
               <span class="match-diff-badge" style="color:${diffColor}; border-color:${diffColor};">${diffLabel} ${_('difficulty')}</span>
             </div>
           </div>
-          <div class="big-score">
-             <span class="ct">${ctScore}</span>
-             <span class="sep">:</span>
-             <span class="t">${tScore}</span>
-           </div>
+          <div class="match-center">
+            <div class="big-score">
+              <span class="ct">${ctScore}</span>
+              <span class="sep">:</span>
+              <span class="t">${tScore}</span>
+            </div>
+            ${expLabel ? `<div class="match-exp" style="color:${expColor};"><span class="exp-icon">${expGain > 0 ? '▲' : expGain < 0 ? '▼' : '◆'}</span>${expLabel}</div>` : ''}
+          </div>
           ${result ? `<div class="match-result" style="color:${resultColor};">${result}</div>` : ''}
         </div>
       `;
@@ -1851,6 +2126,15 @@ function renderMatchDetail(match) {
     else if (team === 'T') tPlayers.push(p);
   }
 
+  const playerRanks = {};
+  const allMatchPlayers = [...ctPlayers, ...tPlayers];
+  allMatchPlayers.forEach(p => {
+    const name = p.Name;
+    if (name && !playerRanks[name]) {
+      playerRanks[name] = RankSystem.calculatePlayerRank(name, state.allMatches || [], 10);
+    }
+  });
+
   buildPlayerTeamMap(match);
 
   let firstSwapIndex = -1;
@@ -1874,7 +2158,6 @@ function renderMatchDetail(match) {
     else if (initialSide === 'T') tScore++;
   }
 
-  // 判断当前玩家胜负
   const playerName = state.selectedPlayer;
   const playerOnCT = ctPlayers.some(p => p.Name?.toLowerCase() === playerName?.toLowerCase());
   const playerOnT = tPlayers.some(p => p.Name?.toLowerCase() === playerName?.toLowerCase());
@@ -1884,6 +2167,7 @@ function renderMatchDetail(match) {
   } else if (playerOnT) {
     playerWin = tScore > ctScore;
   }
+  const scoreDiffDetail = Math.abs(ctScore - tScore);
 
   const renderPlayerRow = (p) => {
     const hs = p.Kills > 0 ? Math.round((p.Headshots || 0) / p.Kills * 100) : 0;
@@ -1893,10 +2177,17 @@ function renderMatchDetail(match) {
     const ratingCls = ratingNum >= 1.15 ? 'good' : (ratingNum >= 0.85 ? 'neutral' : 'bad');
     const team = (p.InitialTeam || p.TeamKey || '').toUpperCase();
     const rowCls = team === 'CT' ? 'team-ct' : 'team-t';
+    const pr = playerRanks[p.Name] || {};
+    const rankLabel = pr.currentRank || '?';
+    const rankColor = pr.rankColor || '#888';
+    const escapedName = escapeHtml(p.Name || 'Unknown');
 
     return `
       <tr class="${rowCls}">
-        <td class="player-col">${escapeHtml(p.Name || 'Unknown')}</td>
+        <td class="player-col">
+          <span class="rank-badge-inline" style="background:${rankColor}20; color:${rankColor}; border:1px solid ${rankColor};">${rankLabel}</span>
+          <span class="player-name-link" onclick="selectPlayer('${escapedName.replace(/'/g, "\\'")}')">${escapedName}</span>
+        </td>
         <td><span class="k">${p.Kills || 0}</span></td>
         <td><span class="d">${p.Deaths || 0}</span></td>
         <td><span class="a">${p.Assists || 0}</span></td>
@@ -1945,9 +2236,7 @@ function renderMatchDetail(match) {
           ${getMapName(match.MapName)} · ${rounds.length} ${_('rounds')} · ${formatDateTime(match.StartTime || '')}
         </div>
         <div class="match-difficulty-row">
-          <span class="diff-badge" style="border-color:${RankSystem.rankColors[RankSystem.getMatchDifficultyLabel(match.BotDifficulty, match.DifficultyLevel, playerWin)] || '#888'}; color:${RankSystem.rankColors[RankSystem.getMatchDifficultyLabel(match.BotDifficulty, match.DifficultyLevel, playerWin)] || '#888'};">
-            ${RankSystem.getMatchDifficultyLabel(match.BotDifficulty, match.DifficultyLevel, playerWin)} ${_('difficulty')}
-          </span>
+          ${(() => { const dl = RankSystem.getMatchDifficultyLabel(match.BotDifficulty, match.DifficultyLevel, playerWin, scoreDiffDetail); const dc = RankSystem.rankColors[dl] || '#888'; return `<span class="diff-badge" style="border-color:${dc}; color:${dc};">${dl} ${_('difficulty')}</span>`; })()}
           <span style="color:var(--text-muted); font-size:11px;">
             ${_('botDifficulty')}: ${match.BotDifficulty || 1}
           </span>
@@ -2158,8 +2447,44 @@ function showSettings() {
   render();
 }
 
+function showAbout() {
+  state.currentView = 'about';
+  render();
+}
+
+function openExternal(url) {
+  window.electronAPI.openExternal(url);
+}
+
+function renderAbout() {
+  return `
+    <div class="about-section">
+      <div class="about-card">
+        <img src="logo.png" class="about-logo" alt="Logo">
+        <div class="about-name">CS2 Match Stats</div>
+        <div class="about-version">V1.6.1</div>
+        <div class="about-desc">${_('aboutDesc')}</div>
+        <div class="about-divider"></div>
+        <div class="about-links">
+          <div class="about-link-item" onclick="openExternal('https://github.com/TGP258/CS2MatchStatsElectron')">
+            <span class="about-link-label">${_('repository')}</span>
+            <span class="about-link-value">github.com/TGP258/CS2MatchStatsElectron</span>
+          </div>
+          <div class="about-link-item" onclick="openExternal('https://home.yunijam.top')">
+            <span class="about-link-label">${_('homepage')}</span>
+            <span class="about-link-value">home.yunijam.top</span>
+          </div>
+        </div>
+        <div class="about-footer">${new Date().getFullYear()} CS2 Match Stats</div>
+      </div>
+    </div>
+  `;
+}
+
 function selectPlayer(playerName) {
   state.selectedPlayer = playerName;
+  state.currentView = 'main';
+  state.currentMatch = null;
   try {
     localStorage.setItem('selectedPlayer', playerName);
   } catch (e) {}

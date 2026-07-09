@@ -1,7 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-// Expose protected methods that allow the renderer process to use
-// the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld('electronAPI', {
     // Scanning methods
     scan: {
@@ -29,5 +27,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
         maximize: () => ipcRenderer.invoke('window:maximize'),
         close: () => ipcRenderer.invoke('window:close'),
         isMaximized: () => ipcRenderer.invoke('window:isMaximized')
-    }
+    },
+
+    // Shell methods
+    openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url)
 });

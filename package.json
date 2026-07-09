@@ -1,6 +1,6 @@
 {
   "name": "cs2-match-stats-electron",
-  "version": "1.0.0",
+  "version": "1.6.1",
   "description": "CS2 Match Statistics - Electron Desktop Application",
   "main": "main.js",
   "scripts": {
@@ -13,7 +13,7 @@
     "appId": "com.cs2matchstats.app",
     "productName": "CS2 Match Stats",
     "directories": {
-      "output": "../CS2MatchStats-build-20260624-v9"
+      "output": "../CS2MatchStats-build-20260709-v29"
     },
     "files": [
       "main.js",
