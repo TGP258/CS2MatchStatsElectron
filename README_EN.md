@@ -18,6 +18,7 @@
 - [Quick Start](#quick-start)
 - [Usage](#usage)
 - [Functionality](#functionality)
+- [Rank System](#rank-system)
 - [Data Format](#data-format)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
@@ -201,6 +202,148 @@ The app automatically saves the following configuration:
 
 - Custom path settings (Steam, CS2, match_history)
 - Selected player
+
+---
+
+## Rank System
+
+The app features a built-in ELO-inspired ranking system that considers match difficulty, score gap, player performance, and rank difference to calculate EXP gain/loss for each match.
+
+### Rank Tiers
+
+There are 10 ranks, from lowest to highest:
+
+| Rank | EXP Threshold | Color |
+|------|--------------|-------|
+| D | 0 | Gray |
+| D+ | 80 | Light Gray |
+| C | 200 | Green |
+| C+ | 360 | Light Green |
+| B | 560 | Blue |
+| B+ | 800 | Light Blue |
+| A | 1120 | Purple |
+| A+ | 1500 | Magenta |
+| S | 2000 | Orange |
+| Pro | 2600 | Gold |
+
+New players start at 500 EXP (rank C).
+
+### Match Difficulty
+
+Match difficulty is determined by the `BotDifficulty` field recorded by the plugin (detected via SHA256 hash of CS2-Bot-Improver's `botprofile.vpk` file):
+
+| BotDifficulty | Raw Value |
+|---------------|-----------|
+| Low | 1 |
+| Medium | 2 |
+| High | 3 |
+
+When `BotDifficulty` is 0 or unreadable (old data), the match defaults to C+ difficulty.
+
+### Effective Difficulty
+
+The raw difficulty is dynamically adjusted based on match outcome and score gap:
+
+- **On win**: Stomps (larger score gaps) reduce effective difficulty; close matches keep it unchanged
+- **On loss**: Being stomped (larger score gaps) increases effective difficulty; close matches keep it unchanged
+
+| Score Gap | Win Adjustment | Loss Adjustment |
+|-----------|---------------|----------------|
+| ≤1 | ±0 | ±0 |
+| 2 | -0.1 | +0.1 |
+| 3 | -0.2 | +0.2 |
+| 4 | -0.3 | +0.3 |
+| 5 | -0.4 | +0.4 |
+| ≥6 | -0.5 | +0.5 |
+
+The minimum effective difficulty is 0.5.
+
+### Difficulty Labels
+
+Effective difficulty maps to rank labels:
+
+| Effective Difficulty | Label |
+|----------------------|-------|
+| ≤0.5 | C |
+| ≤1.0 | C+ |
+| ≤1.5 | B |
+| ≤2.0 | B+ |
+| ≤2.5 | A |
+| ≤3.0 | A+ |
+| ≤3.5 | S |
+| >3.5 | Pro |
+
+### EXP Calculation Formula
+
+The EXP for each match is calculated as follows:
+
+**Win:**
+
+```
+baseClose = score gap coefficient (low for stomps, high for close matches)
+winClose = min(1.0, 1.0 - baseClose × 0.65 + 0.35)  // stomp win > close win
+perfBonus = (Rating - 1.0) × 30                     // performance bonus
+difficultyFactor = 0.5 + effectiveDifficulty × 0.5
+baseGain = BASE(60) × winClose × difficultyFactor + perfBonus
+EXP = baseGain × rankDiffMultiplier
+```
+
+**Loss:**
+
+```
+baseLoss = BASE(60) × baseClose × (0.8 + effectiveDifficulty × 0.4)
+EXP = -(baseLoss × rankDiffMultiplier)
+```
+
+> Losses do not include performance bonus (perfBonus), preventing high-Rating players from benefiting on both wins and losses.
+
+**Score Gap Coefficient (baseClose):**
+
+| Score Gap | baseClose |
+|-----------|-----------|
+| ≤2 | 1.00 |
+| 3 | 0.95 |
+| 4 | 0.85 |
+| 5 | 0.75 |
+| 6 | 0.65 |
+| ≥7 | max(0.3, 1.0 - (scoreGap - 2) × 0.07) |
+
+### Rank Difference Multiplier
+
+The rank difference multiplier is the core mechanism of the system, adjusting EXP based on the difference between **match rank** and **player's current rank**:
+
+- **Higher rank in lower match**: Win gains are greatly reduced, loss penalties are greatly increased (prevents farming)
+- **Lower rank in higher match**: Win gains are greatly increased, loss penalties are reduced (encourages challenging higher difficulties)
+
+| Rank Diff | Win Multiplier | Loss Multiplier | Description |
+|-----------|---------------|-----------------|-------------|
+| -4 | 0.10 | 0.15 | 4 ranks higher in lower match, almost no EXP |
+| -3 | 0.25 | 0.25 | |
+| -2 | 0.50 | 0.40 | 1/3~1/2 of same-rank |
+| -1 | 0.75 | 0.70 | |
+| 0 | 1.00 | 1.00 | Same rank, normal |
+| +1 | 1.50 | 1.40 | |
+| +2 | 2.00 | 1.80 | 1.5~2× |
+| +3 | 2.50 | 2.30 | |
+| +4 | 2.80 | 2.80 | 2.5~3× |
+
+> Rank diff = match rank index - player rank index (positive = match is higher than player)
+
+### Total EXP Calculation
+
+Total EXP uses a **70% recent + 30% overall** weighted average:
+
+1. EXP is calculated iteratively in chronological order, using the player's rank at the time of each match for the rank difference multiplier
+2. Recent 10 matches EXP sum × 0.7 + all matches EXP sum × 0.3 = Total EXP
+3. Current rank and progress are determined by mapping total EXP to rank thresholds
+
+### Single-Match Player Rule
+
+Players with only one match played (typically BOTs disguised as real players) display their rank as the match difficulty label + `?`, e.g. `B?`, `A+?`.
+
+### BOT Rank Direction
+
+BOT rank fitting works in reverse compared to real players: when a BOT stomps a real player in a match, the BOT's displayed rank is higher (e.g. C+ match, BOT wins → displays B).
 
 ---
 
